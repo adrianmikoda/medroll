@@ -1,0 +1,10 @@
+# file converter
+pymupdf
+python-docx
+pydantic
+langdetect
+
+# api 
+fastapi
+uvicorn
+python-multipart
