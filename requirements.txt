@@ -1,4 +1,0 @@
-pymupdf
-python-docx
-pydantic
-langdetect
