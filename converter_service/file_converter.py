@@ -24,7 +24,7 @@ class PDFExtractor(BaseExtractor):
         text = ""
         with fitz.open(file_path) as doc:
             for page in doc:
-                text += page.get_text()
+                text += page.get_text() # type: ignore
         return text.strip()
 
 class DocxExtractor(BaseExtractor):
