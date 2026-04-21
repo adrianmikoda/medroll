@@ -2,7 +2,7 @@ import os
 import shutil
 import json
 from fastapi import FastAPI, UploadFile, File, HTTPException
-from file_converter import FileConverter
+from .file_converter import FileConverter
 
 app = FastAPI(
     title = "Medical Document Converter API",
@@ -20,7 +20,7 @@ def home():
 @app.post("/convert/{session_id}")
 async def convert_file(session_id: str, file: UploadFile = File(...)):
     # main endpoint
-    file_path = os.path.join(TEMP_DIR, file.filename)
+    file_path = os.path.join(TEMP_DIR, file.filename) # type: ignore
 
     try:
         with open(file_path, "wb") as buffer:
