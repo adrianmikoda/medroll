@@ -8,3 +8,7 @@ langdetect
 fastapi
 uvicorn
 python-multipart
+
+# advanced file converter
+docling
+pydantic-settings
