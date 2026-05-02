@@ -1,0 +1,8 @@
+-r base.txt
+
+PyMuPDF
+python-docx
+langdetect
+fastapi
+uvicorn
+python-multipart
