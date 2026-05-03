@@ -6,7 +6,7 @@ from dataclasses import dataclass
 @dataclass(slots=True)
 class AssignmentConfig:
     # Jak mocno karzę za zapełnianie kolejnych slotów lekarza.
-    load_penalty_weight: float = 0.10
+    load_penalty_weight: float = 0.05
 
     # Jak szybko kara rośnie.
     # 1.0 -> liniowo
