@@ -10,7 +10,7 @@ from .models import (
 from .service import AssignmentService
 
 __all__ = [
-    "distance_to_score",
+    "raw_value_to_score",
     "patient_from_lancedb_rows",
     "AssignmentConfig",
     "AssignmentDecision",

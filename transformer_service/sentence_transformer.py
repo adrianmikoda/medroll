@@ -1,65 +1,102 @@
-import os
-import lancedb
-import pandas as pd
-from lancedb.pydantic import Vector, LanceModel
-from sentence_transformers import SentenceTransformer
-from typing import List
-from converter_service.file_converter import FileConverter
-import json
-from tqdm import tqdm
+from __future__ import annotations
 
-class MySchema(LanceModel):
+import json
+from typing import Any
+
+import lancedb
+from lancedb.pydantic import LanceModel, Vector
+from sentence_transformers import SentenceTransformer
+
+from converter_service.file_converter import FileConverter
+
+
+class DoctorProfileSchema(LanceModel):
+    doctor_id: str
     filename: str
     text: str
-    vector: Vector(384) # type: ignore
+    vector: Vector(384)  # type: ignore
 
-class Database():
-    def __init__(self):
-        self.model = SentenceTransformer('all-MiniLM-L6-v2')
-        self.db = lancedb.connect("./lancedb")
-        self.tbl = self.db.create_table("data", schema=MySchema, mode="overwrite")
 
-    def add(self, data: str, filename: str) -> None:
-        data_with_embeddings = {"filename": filename,
-                                "text": data, 
-                                "vector": self.model.encode(data).tolist()} 
-        self.tbl.add([data_with_embeddings])
+class Database:
+    def __init__(
+        self,
+        db_path: str = "./lancedb",
+        table_name: str = "doctors",
+        model_name: str = "all-MiniLM-L6-v2",
+        table_mode: str = "overwrite",
+    ) -> None:
+        self.model = SentenceTransformer(model_name)
+        self.db = lancedb.connect(db_path)
+        self.table_name = table_name
 
-    def search(self, query: str, n: int) -> None:
-        query_vector = self.model.encode(query).tolist()
-        results_df = self.tbl.search(query_vector).limit(n).to_pandas()
+        existing_tables = set(self.db.table_names())
 
-        if results_df.empty:
-            print("No results found.")
+        if table_mode == "overwrite":
+            self.tbl = self.db.create_table(
+                table_name,
+                schema=DoctorProfileSchema,
+                mode="overwrite",
+            )
+        elif table_name in existing_tables:
+            self.tbl = self.db.open_table(table_name)
         else:
-            for idx, row in results_df.iterrows():
-                distance = row.get('_distance', 0)
-                print(f"\n[{idx+1}] File: {row['filename']} (Distance: {distance:.4f})") # type: ignore
+            self.tbl = self.db.create_table(
+                table_name,
+                schema=DoctorProfileSchema,
+                mode="create",
+            )
 
-def main():
-    data_directory = "./fake_data/cvs/"
-    data_filenames = ["cv_kardiochirurg.pdf",
-                      "cv_ortopeda.pdf",
-                      "cv_psychiatra.pdf"]
-    
-    query_directory = "./fake_data/medical_records/"
-    query_filenames = ["karta_1.pdf",
-                       "karta_2.pdf",
-                       "karta_3.pdf"]
+    def encode_text(self, text: str) -> list[float]:
+        # Normalizuję embedding, żeby cosine miało sensowną i stabilną geometrię.
+        return self.model.encode(
+            text,
+            normalize_embeddings=True,
+        ).tolist()
 
-    database = Database()
-    print("\n\n")
+    def add(self, doctor_id: str, data: str, filename: str) -> None:
+        row = {
+            "doctor_id": doctor_id,
+            "filename": filename,
+            "text": data,
+            "vector": self.encode_text(data),
+        }
+        self.tbl.add([row])
 
-    for filename in tqdm(data_filenames):
-        data = json.loads(FileConverter(f"{data_directory}{filename}", "1").convert_to_json())
-        database.add(data["content"], data["filename"])
-    print(f"succesfully loaded all data from {data_directory}")
-    print("\n\n")
+    def add_file(self, doctor_id: str, file_path: str, session_id: str = "1") -> dict[str, Any]:
+        data = json.loads(FileConverter(file_path, session_id).convert_to_json())
 
-    for filename in query_filenames:
-        print(filename)
-        data = json.loads(FileConverter(f"{query_directory}{filename}", "1").convert_to_json())
-        database.search(data["content"], 3)
-    
-if __name__ == "__main__":
-    main()
+        if data.get("status") == "error":
+            raise ValueError(data["message"])
+
+        self.add(
+            doctor_id=doctor_id,
+            data=data["content"],
+            filename=data["filename"],
+        )
+        return data
+
+    def search(self, query: str, n: int = 5) -> list[dict[str, Any]]:
+        query_vector = self.encode_text(query)
+
+        results_df = (
+            self.tbl.search(query_vector)
+            .distance_type("cosine")
+            .limit(n)
+            .to_pandas()
+        )
+
+        return results_df.to_dict(orient="records")
+
+    def search_file(
+        self,
+        file_path: str,
+        session_id: str = "1",
+        n: int = 5,
+    ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+        data = json.loads(FileConverter(file_path, session_id).convert_to_json())
+
+        if data.get("status") == "error":
+            raise ValueError(data["message"])
+
+        rows = self.search(query=data["content"], n=n)
+        return data, rows
