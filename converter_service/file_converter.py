@@ -1,83 +1,42 @@
 import os
 import json
-import fitz
-from docx import Document
-from pydantic import BaseModel
-from langdetect import detect_langs
-from abc import ABC, abstractmethod
-
-#Pydantic
-class MedicalDocument(BaseModel):
-    session_id: str
-    filename: str
-    content: str
-    language: str
-    status: str = "processed"
-
-class BaseExtractor(ABC):
-    @abstractmethod
-    def extract(self, file_path: str) -> str:
-        pass
-
-class PDFExtractor(BaseExtractor):
-    def extract(self, file_path: str) -> str:
-        text = ""
-        with fitz.open(file_path) as doc:
-            for page in doc:
-                text += page.get_text()
-        return text.strip()
-
-class DocxExtractor(BaseExtractor):
-    def extract(self, file_path: str) -> str:
-        doc = Document(file_path)
-        return "\n".join([p.text for p in doc.paragraphs]).strip()
+from .extractors import PDFExtractor, DocxExtractor, DoclingExtractor 
+from .utils.language_detector import LanguageService
+from .utils.text_chunker import TextProcessor
+from .classifier import DocumentClassifier
+from .models import MedicalDocument
 
 class FileConverter:
-    EXTRACTORS = {
-        '.pdf': PDFExtractor(),
-        '.docx': DocxExtractor(),
-    }
-
     def __init__(self, file_path: str, session_id: str):
         self.file_path = file_path
         self.session_id = session_id
         self.extension = os.path.splitext(file_path)[1].lower()
+        self.simple_extractors = {
+            '.pdf': PDFExtractor(),
+            '.docx': DocxExtractor(),
+        }
+        self.advanced_extractor = DoclingExtractor()
+    
+    def convert(self)->str:
+        is_adv = DocumentClassifier.is_complex(self.file_path)
+        p_type = "advanced" if is_adv else "simple"
 
-    def detect_language(self, text: str) -> tuple[bool, str]:
         try:
-            predictions = detect_langs(text) # [lang:confidence score]
-            top_lang = predictions[0]
-
-            if top_lang.lang not in ['pl', 'de', 'en']:
-                return False, f"The language {top_lang.lang} is not supported"
-            
-            if top_lang.prob < 0.8:
-                return False, "Validation Error: Multiple Languages detected. Only single-language documents are supported"
-
-            return True, top_lang.lang
-        except:
-            return False, "Could not recognize the language"
-
-    def convert_to_json(self) -> str:
-        try:
-            extractor = self.EXTRACTORS.get(self.extension)
-            if not extractor:
-                raise ValueError(f"Unsupported format: {self.extension}")
-
+            extractor = self.advanced_extractor if is_adv else self.simple_extractors.get(self.extension)
             raw_text = extractor.extract(self.file_path)
-
-            is_valid_lang, lang_result = self.detect_language(raw_text)
-            if not is_valid_lang:
-                raise ValueError(lang_result)
-            
-            doc_obj = MedicalDocument(
-                session_id=self.session_id,
-                filename=os.path.basename(self.file_path),
-                content = raw_text,
-                language = lang_result
-            )
-
-            return doc_obj.model_dump_json(indent=4)
+            return self._build_response(raw_text, p_type)
         except Exception as e:
-            # API Errors
-            return json.dumps({"status": "error", "message": str(e)}, ensure_ascii=False)
+            return json.dumps({"status": "error", "message": str(e)})
+    
+    def _build_response(self, text:str, p_type:str)->str:
+        is_valid, lang = LanguageService.detect(text)
+        chunks = TextProcessor.split_into_chunks(text)
+        doc_obj = MedicalDocument(
+            session_id=self.session_id,
+            filename=os.path.basename(self.file_path),
+            chunks = chunks,
+            content=text,
+            language=lang if is_valid else "unknown",
+            processing_type=p_type
+        )
+        return doc_obj.model_dump_json(indent=4)

@@ -2,7 +2,7 @@ import os
 import shutil
 import json
 from fastapi import FastAPI, UploadFile, File, HTTPException
-from file_converter import FileConverter
+from .file_converter import FileConverter
 
 app = FastAPI(
     title = "Medical Document Converter API",
@@ -27,17 +27,17 @@ async def convert_file(session_id: str, file: UploadFile = File(...)):
             shutil.copyfileobj(file.file, buffer)
         
         converter = FileConverter(file_path, session_id)
-        result_json = converter.convert_to_json()
+        result_json = converter.convert()
 
         result_data = json.loads(result_json)
         
-        if result_data.get("status") == "error":
+        if isinstance(result_data, dict) and result_data.get("status") == "error":
             raise HTTPException(status_code=400, detail=result_data.get("message"))
         
         return result_data
     
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Server Error: {str(e)}")
 
     finally:
         if os.path.exists(file_path):
