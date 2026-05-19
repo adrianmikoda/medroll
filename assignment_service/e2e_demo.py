@@ -56,7 +56,7 @@ def main() -> None:
     database = Database(
         db_path="./lancedb",
         table_name="doctors",
-        model_name="all-MiniLM-L6-v2",
+        model_name="nvidia/llama-embed-nemotron-8b",
         table_mode="overwrite",
     )
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from email.mime import text
 import json
 from typing import Any
 
@@ -14,7 +15,7 @@ class DoctorProfileSchema(LanceModel):
     doctor_id: str
     filename: str
     text: str
-    vector: Vector(384)  # type: ignore
+    vector: Vector(4096)  # type: ignore
 
 
 class Database:
@@ -22,10 +23,15 @@ class Database:
         self,
         db_path: str = "./lancedb",
         table_name: str = "doctors",
-        model_name: str = "all-MiniLM-L6-v2",
+        model_name: str = "nvidia/llama-embed-nemotron-8b",
         table_mode: str = "overwrite",
     ) -> None:
-        self.model = SentenceTransformer(model_name)
+        self.model = SentenceTransformer(
+        model_name,
+        trust_remote_code=True,
+        model_kwargs={"attn_implementation": "eager"},
+        processor_kwargs={"padding_side": "left"},
+    )
         self.db = lancedb.connect(db_path)
         self.table_name = table_name
 
@@ -46,19 +52,21 @@ class Database:
                 mode="create",
             )
 
-    def encode_text(self, text: str) -> list[float]:
-        # Normalizuję embedding, żeby cosine miało sensowną i stabilną geometrię.
-        return self.model.encode(
-            text,
-            normalize_embeddings=True,
-        ).tolist()
+    # rozdział do retrivalu na lekarzy (dokumenty) i pacjentów (zapytania)
+    def encode_doctor_text(self, text: str) -> list[float]:
+        return self.model.encode_document(text).tolist()
+    
+    def encode_patient_query(self, text: str) -> list[float]:
+        task = "Given a question, retrieve passages that answer the question"
+        query = f"Instruct: {task}\nQuery: {text}"
+        return self.model.encode_query(query).tolist()
 
     def add(self, doctor_id: str, data: str, filename: str) -> None:
         row = {
             "doctor_id": doctor_id,
             "filename": filename,
             "text": data,
-            "vector": self.encode_text(data),
+            "vector": self.encode_doctor_text(data),
         }
         self.tbl.add([row])
 
@@ -79,7 +87,7 @@ class Database:
         )
 
     def search(self, query: str, n: int = 5) -> list[dict[str, Any]]:
-        query_vector = self.encode_text(query)
+        query_vector = self.encode_patient_query(query)
 
         results_df = (
             self.tbl.search(query_vector)
