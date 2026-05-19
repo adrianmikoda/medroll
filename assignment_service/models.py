@@ -30,13 +30,11 @@ class PatientRequest:
     candidates: list[Candidate]
     metadata: dict[str, Any] = field(default_factory=dict)
 
-
 @dataclass(slots=True)
 class DoctorSlot:
     doctor_id: str
     slot_index: int
     penalty: float
-
 
 @dataclass(slots=True)
 class AssignmentDecision:
@@ -49,7 +47,6 @@ class AssignmentDecision:
     final_score: float
     mode: str
     reason: str
-
 
 @dataclass(slots=True)
 class AssignmentSummary:

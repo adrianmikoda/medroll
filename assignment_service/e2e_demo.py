@@ -8,7 +8,7 @@ from assignment_service import (
     Doctor,
     patient_from_lancedb_rows,
 )
-from transformer_service.sentence_transformer import Database
+from transformer_service.database import Database
 
 
 def print_retrieval(patient_id: str, rows: list[dict]) -> None:
