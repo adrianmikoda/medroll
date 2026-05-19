@@ -64,7 +64,11 @@ class Database:
 
     def add_file(self, doctor_id: str, file_path: str, session_id: str = "1") -> dict[str, Any]:
         data = json.loads(FileConverter(file_path, session_id).convert_to_json())
-
+        self.add_json(doctor_id=doctor_id, data=data)
+        
+        return data
+    
+    def add_json(self, doctor_id, data: dict[str, Any]) -> None:
         if data.get("status") == "error":
             raise ValueError(data["message"])
 
@@ -73,7 +77,6 @@ class Database:
             data=data["content"],
             filename=data["filename"],
         )
-        return data
 
     def search(self, query: str, n: int = 5) -> list[dict[str, Any]]:
         query_vector = self.encode_text(query)
