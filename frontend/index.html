@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedRoll :: Patient-Doctor Assignment System</title>
+    <meta name="description"
+        content="MedRoll — AI-powered patient-to-doctor assignment system using vector search and the Hungarian algorithm.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <div id="screen">
+        <!-- ── Header ──────────────────────────────────── -->
+        <header id="header">
+            <div class="header-title">
+                <span class="logo-text">MedRoll</span>
+            </div>
+            <div class="status-bar" id="statusBar">
+                <span class="status-item">STATUS: <span id="sysStatus" class="hl">BOOT</span></span>
+                <span class="status-item">MODEL: <span id="modelStatus" class="hl">---</span></span>
+                <span class="status-item">DOCTORS: <span id="docCount" class="hl">0</span></span>
+                <span class="status-item">PATIENTS: <span id="patCount" class="hl">0</span></span>
+            </div>
+        </header>
+
+        <!-- ── Nav ─────────────────────────────────────── -->
+        <nav id="nav">
+            <a href="#dashboard" class="nav-cmd active" data-tab="dashboard">[ dashboard ]</a>
+            <a href="#doctors" class="nav-cmd" data-tab="doctors">[ doctors ]</a>
+            <a href="#patients" class="nav-cmd" data-tab="patients">[ patients ]</a>
+            <a href="#assign" class="nav-cmd" data-tab="assign">[ assign ]</a>
+            <a href="#config" class="nav-cmd" data-tab="config">[ config ]</a>
+        </nav>
+
+        <!-- ── Main content ────────────────────────────── -->
+        <main id="main">
+
+            <!-- DASHBOARD -->
+            <section id="tab-dashboard" class="tab-content active">
+                <div class="section-head">┌─ SYSTEM DASHBOARD ─────────────────────────────────────────┐</div>
+                <div class="terminal-block">
+                    <div class="prompt">> system.info()</div>
+                    <div id="dashInfo" class="output">Initializing...</div>
+                </div>
+                <div class="terminal-block">
+                    <div class="prompt">> load_demo_data()</div>
+                    <div class="output">
+                        <p class="dim">Load sample doctors (CVs) and patients (medical records) from fake_data/</p>
+                        <button id="btnLoadDemo" class="cmd-btn">EXECUTE</button>
+                        <div id="demoOutput" class="output-result"></div>
+                    </div>
+                </div>
+                <div class="section-foot">└────────────────────────────────────────────────────────────┘</div>
+            </section>
+
+            <!-- DOCTORS -->
+            <section id="tab-doctors" class="tab-content">
+                <div class="section-head">┌─ DOCTORS REGISTRY ─────────────────────────────────────────┐</div>
+                <div class="terminal-block">
+                    <div class="prompt">> doctors.add(cv_file, doctor_id, name, capacity)</div>
+                    <form id="formAddDoctor" class="cmd-form">
+                        <div class="form-row">
+                            <label>doctor_id:</label>
+                            <input type="text" id="docId" required placeholder="doc_example" autocomplete="off">
+                        </div>
+                        <div class="form-row">
+                            <label>name:</label>
+                            <input type="text" id="docName" placeholder="Dr. Smith" autocomplete="off">
+                        </div>
+                        <div class="form-row">
+                            <label>capacity:</label>
+                            <input type="number" id="docCapacity" value="5" min="1" max="100">
+                        </div>
+                        <div class="form-row">
+                            <label>cv_file:</label>
+                            <input type="file" id="docFile" accept=".pdf,.docx" required>
+                        </div>
+                        <button type="submit" class="cmd-btn">SUBMIT</button>
+                        <div id="docAddOutput" class="output-result"></div>
+                    </form>
+                </div>
+                <div class="terminal-block">
+                    <div class="prompt">> doctors.list()</div>
+                    <div id="doctorsList" class="output-result"></div>
+                </div>
+                <div class="section-foot">└────────────────────────────────────────────────────────────┘</div>
+            </section>
+
+            <!-- PATIENTS -->
+            <section id="tab-patients" class="tab-content">
+                <div class="section-head">┌─ PATIENTS REGISTRY ────────────────────────────────────────┐</div>
+                <div class="terminal-block">
+                    <div class="prompt">> patients.add(medical_record, patient_id)</div>
+                    <form id="formAddPatient" class="cmd-form">
+                        <div class="form-row">
+                            <label>patient_id:</label>
+                            <input type="text" id="patId" required placeholder="pat_example" autocomplete="off">
+                        </div>
+                        <div class="form-row">
+                            <label>record_file:</label>
+                            <input type="file" id="patFile" accept=".pdf,.docx" required>
+                        </div>
+                        <button type="submit" class="cmd-btn">SUBMIT</button>
+                        <div id="patAddOutput" class="output-result"></div>
+                    </form>
+                </div>
+                <div class="terminal-block">
+                    <div class="prompt">> patients.list()</div>
+                    <div id="patientsList" class="output-result"></div>
+                </div>
+                <div class="section-foot">└────────────────────────────────────────────────────────────┘</div>
+            </section>
+
+            <!-- ASSIGNMENT -->
+            <section id="tab-assign" class="tab-content">
+                <div class="section-head">┌─ ASSIGNMENT ENGINE ────────────────────────────────────────┐</div>
+
+                <div class="terminal-block">
+                    <div class="prompt">> retrieval.search(patient_id, n_results)</div>
+                    <div class="cmd-form">
+                        <div class="form-row">
+                            <label>patient_id:</label>
+                            <select id="searchPatientId" class="cmd-select"></select>
+                        </div>
+                        <div class="form-row">
+                            <label>n_results:</label>
+                            <input type="number" id="searchN" value="5" min="1" max="20">
+                        </div>
+                        <button id="btnSearch" class="cmd-btn">SEARCH</button>
+                        <button id="btnSearchAll" class="cmd-btn cmd-btn-alt">SEARCH ALL</button>
+                        <div id="searchOutput" class="output-result"></div>
+                    </div>
+                </div>
+
+                <div class="terminal-block">
+                    <div class="prompt">> solver.assign(patients, doctors)</div>
+                    <div class="cmd-form">
+                        <button id="btnAssign" class="cmd-btn">RUN ASSIGNMENT</button>
+                        <div id="assignOutput" class="output-result"></div>
+                    </div>
+                </div>
+
+                <div class="terminal-block">
+                    <div class="prompt">> assignment.results</div>
+                    <div id="assignResults" class="output-result"></div>
+                </div>
+
+                <div class="section-foot">└────────────────────────────────────────────────────────────┘</div>
+            </section>
+
+            <!-- CONFIG -->
+            <section id="tab-config" class="tab-content">
+                <div class="section-head">┌─ SOLVER CONFIGURATION ─────────────────────────────────────┐</div>
+                <div class="terminal-block">
+                    <div class="prompt">> config.get()</div>
+                    <div id="configCurrent" class="output-result"></div>
+                </div>
+                <div class="terminal-block">
+                    <div class="prompt">> config.set(params)</div>
+                    <form id="formConfig" class="cmd-form">
+                        <div class="form-row">
+                            <label>load_penalty_weight:</label>
+                            <input type="number" id="cfgWeight" step="0.01" value="0.05">
+                        </div>
+                        <div class="form-row">
+                            <label>load_penalty_exponent:</label>
+                            <input type="number" id="cfgExponent" step="0.1" value="1.0">
+                        </div>
+                        <div class="form-row">
+                            <label>unassigned_score:</label>
+                            <input type="number" id="cfgUnassigned" step="0.1" value="0.0">
+                        </div>
+                        <div class="form-row">
+                            <label>min_candidate_score:</label>
+                            <input type="number" id="cfgMinScore" step="0.01" value="0.0">
+                        </div>
+                        <button type="submit" class="cmd-btn">UPDATE</button>
+                        <div id="configOutput" class="output-result"></div>
+                    </form>
+                </div>
+                <div class="section-foot">└────────────────────────────────────────────────────────────┘</div>
+            </section>
+
+        </main>
+
+        <!-- ── Footer ──────────────────────────────────── -->
+        <footer id="footer">
+            <span class="dim">MedRoll │ Patient-Doctor Assignment System │ Hungarian Algorithm + LanceDB Vector
+                Search</span>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+
+</html>
