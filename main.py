@@ -21,6 +21,9 @@ from assignment_service import (
     patient_from_lancedb_rows,
 )
 
+import config
+
+
 TEMP_DIR = "temp_uploads"
 os.makedirs(TEMP_DIR, exist_ok=True)
 
@@ -29,8 +32,6 @@ app = FastAPI(
     version="1.0.0",
 )
 
-
-# ── In-memory state ──────────────────────────────────────────────
 class AppState:
     def __init__(self):
         self.doctors: dict[str, dict[str, Any]] = {}
@@ -45,21 +46,70 @@ class AppState:
         self.db_ready = False
         self.last_assignment: dict[str, Any] | None = None
 
-    def try_init_database(self):
-        if self.database is not None:
+    def try_init_database(self, table_mode: str = "cache"):
+        if self.database is not None and table_mode == "cache":
             return
+
+        selected_model_name = config.get_selected_model()
+        selected_vector_dim = config.get_selected_vector_dim()
+
         try:
             from transformer_service.database import Database
             self.database = Database(
                 db_path="./lancedb",
                 table_name="doctors_gui",
-                model_name="nvidia/llama-embed-nemotron-8b",
-                table_mode="overwrite",
+                model_name=selected_model_name,
+                table_mode=table_mode,
+                vector_dim=selected_vector_dim,
             )
             self.db_ready = True
+            if table_mode == "cache":
+                self.load_doctors_from_db()
         except Exception as e:
             print(f"[WARN] Could not initialize model/DB: {e}")
             self.db_ready = False
+
+    def load_doctors_from_db(self):
+        if self.database is None:
+            return
+        try:
+            records = self.database.get_all_records()
+            self.doctors.clear()
+            for r in records:
+                doc_id = r.get("doctor_id")
+                if not doc_id:
+                    continue
+                capacity = r.get("capacity", 5)
+                try:
+                    import math
+                    if isinstance(capacity, float) and math.isnan(capacity):
+                        capacity = 5
+                    else:
+                        capacity = int(capacity)
+                except Exception:
+                    capacity = 5
+
+                self.doctors[doc_id] = {
+                    "doctor_id": doc_id,
+                    "name": r.get("name") or doc_id,
+                    "capacity": capacity,
+                    "current_load": 0,
+                    "filename": r.get("filename") or "",
+                    "content_preview": (r.get("text") or "")[:300],
+                    "language": r.get("language") or "?",
+                }
+            print(f"[INFO] Loaded {len(self.doctors)} doctors from database cache.")
+        except Exception as e:
+            print(f"[WARN] Failed to load doctors from database: {e}")
+
+    def change_model_and_reset(self, new_model_key: str):
+        config.set_model(new_model_key)
+        self.doctors.clear()
+        self.patients.clear()
+        self.last_assignment = None
+        self.database = None
+        self.db_ready = False
+        self.try_init_database(table_mode="overwrite")
 
 
 state = AppState()
@@ -71,6 +121,7 @@ class ConfigModel(BaseModel):
     load_penalty_exponent: float = 1.0
     unassigned_score: float = 0.0
     min_candidate_score: float = 0.0
+    model_key: str | None = None
 
 
 class AssignRequest(BaseModel):
@@ -102,6 +153,8 @@ def health():
     return {
         "status": "online",
         "model_loaded": state.db_ready,
+        "model_name": config.get_selected_model(),
+        "model_key": config.SELECTED_MODEL_KEY,
         "doctors_count": len(state.doctors),
         "patients_count": len(state.patients),
     }
@@ -137,6 +190,9 @@ async def add_doctor(
                     doctor_id=doctor_id,
                     data=result["content"],
                     filename=result["filename"],
+                    name=name or doctor_id,
+                    capacity=capacity,
+                    language=result.get("language", "?"),
                 )
             except Exception as e:
                 print(f"[WARN] DB add failed: {e}")
@@ -405,6 +461,8 @@ def get_config():
         "load_penalty_exponent": c.load_penalty_exponent,
         "unassigned_score": c.unassigned_score,
         "min_candidate_score": c.min_candidate_score,
+        "model_key": config.SELECTED_MODEL_KEY,
+        "models": list(config.MODEL_CHOICES.keys()),
     }
 
 
@@ -416,6 +474,8 @@ def update_config(cfg: ConfigModel):
         unassigned_score=cfg.unassigned_score,
         min_candidate_score=cfg.min_candidate_score,
     )
+    if cfg.model_key and cfg.model_key != config.SELECTED_MODEL_KEY:
+        state.change_model_and_reset(cfg.model_key)
     return {"status": "ok", "config": get_config()}
 
 
@@ -454,6 +514,9 @@ def load_demo_data():
                         doctor_id=doc["doctor_id"],
                         data=result["content"],
                         filename=result["filename"],
+                        name=doc["name"],
+                        capacity=doc["capacity"],
+                        language=result.get("language", "?"),
                     )
                 except Exception:
                     pass
@@ -501,13 +564,11 @@ def load_demo_data():
     }
 
 
-# ── Startup ───────────────────────────────────────────────────────
 @app.on_event("startup")
 async def startup():
     state.try_init_database()
 
 
-# ── Serve frontend ────────────────────────────────────────────────
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 
