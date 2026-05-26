@@ -1,7 +1,3 @@
-/* ═══════════════════════════════════════════════════════════
-   MedRoll — Frontend Application Logic
-   ═══════════════════════════════════════════════════════════ */
-
 const API = '';
 
 // ── Helpers ─────────────────────────────────────────────────
@@ -96,7 +92,7 @@ async function refreshDashboard() {
     try {
         const data = await api('GET', '/api/health');
         $('sysStatus').textContent = 'ONLINE';
-        $('modelStatus').textContent = data.model_loaded ? 'LOADED' : 'OFFLINE';
+        $('modelStatus').textContent = data.model_loaded ? `LOADED (${data.model_name})` : 'OFFLINE';
         $('modelStatus').style.color = data.model_loaded ? '' : '#ff4444';
         $('docCount').textContent = data.doctors_count;
         $('patCount').textContent = data.patients_count;
@@ -104,6 +100,7 @@ async function refreshDashboard() {
         $('dashInfo').innerHTML = [
             `  status .............. <span class="msg-ok">ONLINE</span>`,
             `  model_loaded ........ ${data.model_loaded ? '<span class="msg-ok">true</span>' : '<span class="msg-err">false</span>'}`,
+            `  active_model ........ <span class="hl">${data.model_name} (${data.model_key})</span>`,
             `  doctors_registered .. <span class="hl">${data.doctors_count}</span>`,
             `  patients_registered . <span class="hl">${data.patients_count}</span>`,
             ``,
@@ -363,7 +360,6 @@ function renderSearchResultsHtml(data) {
     return html;
 }
 
-// ── Assignment ──────────────────────────────────────────────
 $('btnAssign').addEventListener('click', async () => {
     setLoading('assignOutput', 'Running Hungarian algorithm solver');
 
@@ -381,7 +377,6 @@ $('btnAssign').addEventListener('click', async () => {
 function renderAssignmentResults(data) {
     let html = '';
 
-    // Summary
     html += `<div class="summary-block">
     <div class="summary-title">═══ ASSIGNMENT SUMMARY ═══</div>
     <div class="summary-row"><span class="label">mode</span><span class="val">${data.mode}</span></div>
@@ -428,6 +423,21 @@ function renderAssignmentResults(data) {
 async function refreshConfig() {
     try {
         const data = await api('GET', '/api/config');
+
+        const modelSel = $('cfgModel');
+        if (modelSel) {
+            modelSel.innerHTML = '';
+            (data.models || []).forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                if (m === data.model_key) {
+                    opt.selected = true;
+                }
+                modelSel.appendChild(opt);
+            });
+        }
+
         $('cfgWeight').value = data.load_penalty_weight;
         $('cfgExponent').value = data.load_penalty_exponent;
         $('cfgUnassigned').value = data.unassigned_score;
@@ -435,6 +445,7 @@ async function refreshConfig() {
 
         let html = '';
         for (const [k, v] of Object.entries(data)) {
+            if (k === 'models') continue;
             html += `  ${k.padEnd(25)} = <span class="hl">${v}</span>\n`;
         }
         setOutput('configCurrent', html);
@@ -448,14 +459,20 @@ $('formConfig').addEventListener('submit', async e => {
     setLoading('configOutput', 'Updating config');
 
     try {
-        const data = await api('PUT', '/api/config', {
+        const payload = {
             load_penalty_weight: parseFloat($('cfgWeight').value),
             load_penalty_exponent: parseFloat($('cfgExponent').value),
             unassigned_score: parseFloat($('cfgUnassigned').value),
             min_candidate_score: parseFloat($('cfgMinScore').value),
-        });
+        };
+        const modelSel = $('cfgModel');
+        if (modelSel) {
+            payload.model_key = modelSel.value;
+        }
+        const data = await api('PUT', '/api/config', payload);
         setOutput('configOutput', `<span class="msg-ok">Config updated successfully.</span>`);
         refreshConfig();
+        refreshDashboard();
     } catch (e) {
         setOutput('configOutput', `<span class="msg-err">ERROR: ${escHtml(e.message)}</span>`);
     }

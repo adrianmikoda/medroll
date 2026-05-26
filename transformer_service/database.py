@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from email.mime import text
+import pyarrow as pa
 import json
 from typing import Any
 
@@ -10,49 +10,66 @@ from sentence_transformers import SentenceTransformer
 
 from converter_service.file_converter import FileConverter
 
-
-class DoctorProfileSchema(LanceModel):
-    doctor_id: str
-    filename: str
-    text: str
-    vector: Vector(4096)  # type: ignore
-
-
 class Database:
     def __init__(
         self,
         db_path: str = "./lancedb",
         table_name: str = "doctors",
-        model_name: str = "nvidia/llama-embed-nemotron-8b",
         table_mode: str = "overwrite",
+        model_name: str = "nvidia/llama-embed-nemotron-8b",
+        vector_dim: int = 4096
     ) -> None:
+
         self.model = SentenceTransformer(
-        model_name,
-        trust_remote_code=True,
-        model_kwargs={"attn_implementation": "eager"},
-        processor_kwargs={"padding_side": "left"},
-    )
+            model_name,
+            trust_remote_code=True,
+            model_kwargs={"attn_implementation": "eager"},
+            processor_kwargs={"padding_side": "left"},
+        )
         self.db = lancedb.connect(db_path)
         self.table_name = table_name
 
         existing_tables = set(self.db.table_names())
 
+        dynamic_schema = pa.schema([
+            pa.field("doctor_id", pa.string()),
+            pa.field("filename", pa.string()),
+            pa.field("text", pa.string()),
+            pa.field("vector", pa.list_(pa.float32(), list_size=vector_dim)),
+            pa.field("name", pa.string()),
+            pa.field("capacity", pa.int32()),
+            pa.field("language", pa.string())
+        ])
+
         if table_mode == "overwrite":
             self.tbl = self.db.create_table(
                 table_name,
-                schema=DoctorProfileSchema,
+                schema=dynamic_schema,
                 mode="overwrite",
             )
         elif table_name in existing_tables:
             self.tbl = self.db.open_table(table_name)
+            try:
+                vector_field = self.tbl.schema.field("vector")
+                if hasattr(vector_field.type, "list_size") and vector_field.type.list_size != vector_dim:
+                    self.tbl = self.db.create_table(
+                        table_name,
+                        schema=dynamic_schema,
+                        mode="overwrite",
+                    )
+            except Exception:
+                self.tbl = self.db.create_table(
+                    table_name,
+                    schema=dynamic_schema,
+                    mode="overwrite",
+                )
         else:
             self.tbl = self.db.create_table(
                 table_name,
-                schema=DoctorProfileSchema,
+                schema=dynamic_schema,
                 mode="create",
             )
 
-    # rozdział do retrivalu na lekarzy (dokumenty) i pacjentów (zapytania)
     def encode_doctor_text(self, text: str) -> list[float]:
         return self.model.encode_document(text).tolist()
     
@@ -61,14 +78,32 @@ class Database:
         query = f"Instruct: {task}\nQuery: {text}"
         return self.model.encode_query(query).tolist()
 
-    def add(self, doctor_id: str, data: str, filename: str) -> None:
+    def add(
+        self,
+        doctor_id: str,
+        data: str,
+        filename: str,
+        name: str = "",
+        capacity: int = 5,
+        language: str = "?"
+    ) -> None:
         row = {
             "doctor_id": doctor_id,
             "filename": filename,
             "text": data,
             "vector": self.encode_doctor_text(data),
+            "name": name or doctor_id,
+            "capacity": capacity,
+            "language": language,
         }
         self.tbl.add([row])
+
+    def get_all_records(self) -> list[dict[str, Any]]:
+        try:
+            return self.tbl.to_pandas().to_dict(orient="records")
+        except Exception as e:
+            print(f"[WARN] Error fetching records from LanceDB: {e}")
+            return []
 
     def add_file(self, doctor_id: str, file_path: str, session_id: str = "1") -> dict[str, Any]:
         data = json.loads(FileConverter(file_path, session_id).convert_to_json())

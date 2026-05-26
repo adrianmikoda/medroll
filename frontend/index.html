@@ -164,6 +164,10 @@
                     <div class="prompt">> config.set(params)</div>
                     <form id="formConfig" class="cmd-form">
                         <div class="form-row">
+                            <label>active_model:</label>
+                            <select id="cfgModel" class="cmd-select"></select>
+                        </div>
+                        <div class="form-row">
                             <label>load_penalty_weight:</label>
                             <input type="number" id="cfgWeight" step="0.01" value="0.05">
                         </div>
@@ -188,7 +192,6 @@
 
         </main>
 
-        <!-- ── Footer ──────────────────────────────────── -->
         <footer id="footer">
             <span class="dim">MedRoll │ Patient-Doctor Assignment System │ Hungarian Algorithm + LanceDB Vector
                 Search</span>
