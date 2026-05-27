@@ -46,8 +46,9 @@ class AppState:
         self.db_ready = False
         self.last_assignment: dict[str, Any] | None = None
 
-    def try_init_database(self, table_mode: str = "cache"):
-        if self.database is not None and table_mode == "cache":
+    def try_init_database(self):
+        table_mode = config.get_selected_mode()
+        if self.database is not None and table_mode == "open":
             return
 
         selected_model_name = config.get_selected_model()
@@ -63,7 +64,7 @@ class AppState:
                 vector_dim=selected_vector_dim,
             )
             self.db_ready = True
-            if table_mode == "cache":
+            if table_mode == "open":
                 self.load_doctors_from_db()
         except Exception as e:
             print(f"[WARN] Could not initialize model/DB: {e}")
@@ -102,14 +103,15 @@ class AppState:
         except Exception as e:
             print(f"[WARN] Failed to load doctors from database: {e}")
 
-    def change_model_and_reset(self, new_model_key: str):
+    def change_model_and_reset(self, new_model_key: str, new_mode: str):
         config.set_model(new_model_key)
+        config.set_selected_mode(new_mode)
         self.doctors.clear()
         self.patients.clear()
         self.last_assignment = None
         self.database = None
         self.db_ready = False
-        self.try_init_database(table_mode="overwrite")
+        self.try_init_database()
 
 
 state = AppState()
@@ -122,6 +124,7 @@ class ConfigModel(BaseModel):
     unassigned_score: float = 0.0
     min_candidate_score: float = 0.0
     model_key: str | None = None
+    mode: str | None = None
 
 
 class AssignRequest(BaseModel):
@@ -463,20 +466,29 @@ def get_config():
         "min_candidate_score": c.min_candidate_score,
         "model_key": config.SELECTED_MODEL_KEY,
         "models": list(config.MODEL_CHOICES.keys()),
+        "mode": config.get_selected_mode(),
+        "modes": config.MODE_CHOICES,
     }
 
 
 @app.put("/api/config")
 def update_config(cfg: ConfigModel):
-    state.assignment_config = AssignmentConfig(
-        load_penalty_weight=cfg.load_penalty_weight,
-        load_penalty_exponent=cfg.load_penalty_exponent,
-        unassigned_score=cfg.unassigned_score,
-        min_candidate_score=cfg.min_candidate_score,
-    )
-    if cfg.model_key and cfg.model_key != config.SELECTED_MODEL_KEY:
-        state.change_model_and_reset(cfg.model_key)
-    return {"status": "ok", "config": get_config()}
+    try:
+        state.assignment_config = AssignmentConfig(
+            load_penalty_weight=cfg.load_penalty_weight,
+            load_penalty_exponent=cfg.load_penalty_exponent,
+            unassigned_score=cfg.unassigned_score,
+            min_candidate_score=cfg.min_candidate_score,
+        )
+        model_changed = cfg.model_key is not None and cfg.model_key != config.SELECTED_MODEL_KEY
+        mode_changed = cfg.mode is not None and cfg.mode != config.get_selected_mode()
+        if model_changed or mode_changed:
+            new_model_key = cfg.model_key or config.SELECTED_MODEL_KEY
+            new_mode = cfg.mode or config.get_selected_mode()
+            state.change_model_and_reset(new_model_key, new_mode)
+        return {"status": "ok", "config": get_config()}
+    except ValueError as e:
+        raise HTTPException(400, detail=str(e))
 
 
 # ── Demo data loader ──────────────────────────────────────────────

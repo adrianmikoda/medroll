@@ -438,6 +438,20 @@ async function refreshConfig() {
             });
         }
 
+        const modeSel = $('cfgMode');
+        if (modeSel) {
+            modeSel.innerHTML = '';
+            (data.modes || []).forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                if (m === data.mode) {
+                    opt.selected = true;
+                }
+                modeSel.appendChild(opt);
+            });
+        }
+
         $('cfgWeight').value = data.load_penalty_weight;
         $('cfgExponent').value = data.load_penalty_exponent;
         $('cfgUnassigned').value = data.unassigned_score;
@@ -445,7 +459,7 @@ async function refreshConfig() {
 
         let html = '';
         for (const [k, v] of Object.entries(data)) {
-            if (k === 'models') continue;
+            if (k === 'models' || k === 'modes') continue;
             html += `  ${k.padEnd(25)} = <span class="hl">${v}</span>\n`;
         }
         setOutput('configCurrent', html);
@@ -468,6 +482,10 @@ $('formConfig').addEventListener('submit', async e => {
         const modelSel = $('cfgModel');
         if (modelSel) {
             payload.model_key = modelSel.value;
+        }
+        const modeSel = $('cfgMode');
+        if (modeSel) {
+            payload.mode = modeSel.value;
         }
         const data = await api('PUT', '/api/config', payload);
         setOutput('configOutput', `<span class="msg-ok">Config updated successfully.</span>`);
