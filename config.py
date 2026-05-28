@@ -1,18 +1,21 @@
 import os
 
 MODEL_CHOICES = {
-    "nvidia/llama-embed-nemotron-8b": "nvidia/llama-embed-nemotron-8b",
     "all-MiniLM-L6-v2": "all-MiniLM-L6-v2",
+    "sentence-transformers/embeddinggemma-300m-medical": "sentence-transformers/embeddinggemma-300m-medical",
+    "nvidia/llama-embed-nemotron-8b": "nvidia/llama-embed-nemotron-8b",
+
 }
 
 MODEL_DIMS = {
-    "nvidia/llama-embed-nemotron-8b": 4096,
     "all-MiniLM-L6-v2": 384,
+    "sentence-transformers/embeddinggemma-300m-medical": 768,
+    "nvidia/llama-embed-nemotron-8b": 4096,
 }
 
 MODE_CHOICES = ["overwrite", "open"]
 
-SELECTED_MODEL_KEY = "all-MiniLM-L6-v2"
+SELECTED_MODEL_KEY = "sentence-transformers/embeddinggemma-300m-medical"
 SELECTED_MODE = "open"
 
 def get_selected_model() -> str:
