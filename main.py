@@ -36,6 +36,7 @@ class AppState:
     def __init__(self):
         self.doctors: dict[str, dict[str, Any]] = {}
         self.patients: dict[str, dict[str, Any]] = {}
+        self.patient_cache_path = os.path.join("./lancedb", "patients_gui_cache.json")
         self.assignment_config = AssignmentConfig(
             load_penalty_weight=0.05,
             load_penalty_exponent=1.0,
@@ -43,15 +44,15 @@ class AppState:
             min_candidate_score=0.0,
         )
         self.database = None
+        self.database_model_name: str | None = None
         self.db_ready = False
         self.last_assignment: dict[str, Any] | None = None
 
     def try_init_database(self):
-        table_mode = config.get_selected_mode()
-        if self.database is not None and table_mode == "open":
+        selected_model_name = config.get_selected_model()
+        if self.database is not None and self.database_model_name == selected_model_name:
             return
 
-        selected_model_name = config.get_selected_model()
         selected_vector_dim = config.get_selected_vector_dim()
 
         try:
@@ -60,12 +61,14 @@ class AppState:
                 db_path="./lancedb",
                 table_name="doctors_gui",
                 model_name=selected_model_name,
-                table_mode=table_mode,
+                table_mode="open",
                 vector_dim=selected_vector_dim,
             )
+            self.database_model_name = selected_model_name
             self.db_ready = True
-            if table_mode == "open":
-                self.load_doctors_from_db()
+            self.load_doctors_from_db()
+            self.load_patients_from_cache()
+            self.sync_doctor_loads_from_patients()
         except Exception as e:
             print(f"[WARN] Could not initialize model/DB: {e}")
             self.db_ready = False
@@ -103,6 +106,66 @@ class AppState:
         except Exception as e:
             print(f"[WARN] Failed to load doctors from database: {e}")
 
+    def load_patients_from_cache(self):
+        self.patients.clear()
+        if not os.path.exists(self.patient_cache_path):
+            return
+
+        try:
+            with open(self.patient_cache_path, "r", encoding="utf-8") as f:
+                payload = json.load(f)
+
+            records = payload.get("patients", []) if isinstance(payload, dict) else payload
+            if not isinstance(records, list):
+                records = []
+
+            for record in records:
+                patient_id = record.get("patient_id")
+                if not patient_id:
+                    continue
+
+                self.patients[patient_id] = {
+                    "patient_id": patient_id,
+                    "filename": record.get("filename") or "",
+                    "content_preview": record.get("content_preview") or (record.get("content") or "")[:300],
+                    "content": record.get("content") or "",
+                    "language": record.get("language") or "?",
+                    "assigned_doctor_id": record.get("assigned_doctor_id"),
+                    "assigned_slot_index": record.get("assigned_slot_index"),
+                    "candidates": record.get("candidates") or [],
+                }
+
+            print(f"[INFO] Loaded {len(self.patients)} patients from cache.")
+        except Exception as e:
+            print(f"[WARN] Failed to load patients from cache: {e}")
+
+    def save_patients_to_cache(self):
+        try:
+            os.makedirs(os.path.dirname(self.patient_cache_path), exist_ok=True)
+            with open(self.patient_cache_path, "w", encoding="utf-8") as f:
+                json.dump({"patients": list(self.patients.values())}, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"[WARN] Failed to save patients cache: {e}")
+
+    def clear_patient_cache(self):
+        self.patients.clear()
+        try:
+            if os.path.exists(self.patient_cache_path):
+                os.remove(self.patient_cache_path)
+        except Exception as e:
+            print(f"[WARN] Failed to clear patients cache: {e}")
+
+    def sync_doctor_loads_from_patients(self):
+        loads: dict[str, int] = {doc_id: 0 for doc_id in self.doctors}
+
+        for patient in self.patients.values():
+            assigned_doctor_id = patient.get("assigned_doctor_id")
+            if assigned_doctor_id in loads:
+                loads[assigned_doctor_id] += 1
+
+        for doc_id, doctor in self.doctors.items():
+            doctor["current_load"] = loads.get(doc_id, 0)
+
     def change_model_and_reset(self, new_model_key: str, new_mode: str):
         config.set_model(new_model_key)
         config.set_selected_mode(new_mode)
@@ -110,6 +173,7 @@ class AppState:
         self.patients.clear()
         self.last_assignment = None
         self.database = None
+        self.database_model_name = None
         self.db_ready = False
         self.try_init_database()
 
@@ -210,6 +274,8 @@ async def add_doctor(
             "language": result.get("language", "?"),
         }
 
+        state.sync_doctor_loads_from_patients()
+
         return {"status": "ok", "doctor": state.doctors[doctor_id]}
     finally:
         if os.path.exists(file_path):
@@ -256,8 +322,12 @@ async def add_patient(
             "content_preview": result["content"][:300],
             "content": result["content"],
             "language": result.get("language", "?"),
+            "assigned_doctor_id": None,
+            "assigned_slot_index": None,
             "candidates": [],  # filled by search
         }
+
+        state.save_patients_to_cache()
 
         return {"status": "ok", "patient": _patient_view(state.patients[patient_id])}
     finally:
@@ -275,11 +345,63 @@ def delete_patient(patient_id: str):
     if patient_id not in state.patients:
         raise HTTPException(404, f"Patient '{patient_id}' not found")
     del state.patients[patient_id]
+    state.save_patients_to_cache()
+    state.sync_doctor_loads_from_patients()
     return {"status": "ok", "deleted": patient_id}
 
 
 def _patient_view(p: dict) -> dict:
     return {k: v for k, v in p.items() if k != "content"}
+
+
+def _make_patient_record(
+    patient_id: str,
+    filename: str,
+    content: str,
+    language: str,
+    candidates: list[dict[str, Any]] | None = None,
+    assigned_doctor_id: str | None = None,
+    assigned_slot_index: int | None = None,
+) -> dict[str, Any]:
+    return {
+        "patient_id": patient_id,
+        "filename": filename,
+        "content_preview": content[:300],
+        "content": content,
+        "language": language,
+        "assigned_doctor_id": assigned_doctor_id,
+        "assigned_slot_index": assigned_slot_index,
+        "candidates": candidates or [],
+    }
+
+
+def _build_patient_request(pid: str, patient: dict[str, Any]) -> PatientRequest | None:
+    cands = patient.get("candidates", [])
+    if not cands:
+        return None
+
+    candidates = [
+        Candidate(
+            doctor_id=c["doctor_id"],
+            score=c.get("score", 1.0 - c.get("distance", 0.0)),
+            raw_value=c.get("distance"),
+            raw_value_type="cosine_distance",
+        )
+        for c in cands
+    ]
+
+    return PatientRequest(patient_id=pid, candidates=candidates)
+
+
+def _apply_assignment_decisions(decisions) -> None:
+    for decision in decisions:
+        patient = state.patients.get(decision.patient_id)
+        if patient is not None:
+            patient["assigned_doctor_id"] = decision.assigned_doctor_id
+            patient["assigned_slot_index"] = decision.assigned_slot_index
+
+    state.save_patients_to_cache()
+    state.sync_doctor_loads_from_patients()
 
 
 # ── Search ────────────────────────────────────────────────────────
@@ -304,6 +426,7 @@ def search_patient(req: SearchRequest):
         })
 
     state.patients[req.patient_id]["candidates"] = candidates
+    state.save_patients_to_cache()
     return {"patient_id": req.patient_id, "results": candidates}
 
 
@@ -312,6 +435,8 @@ def search_patient(req: SearchRequest):
 def run_assignment(req: AssignRequest):
     if not state.doctors:
         raise HTTPException(400, "No doctors registered")
+
+    selected_mode = config.get_selected_mode()
 
     doctor_objects = [
         Doctor(
@@ -323,40 +448,48 @@ def run_assignment(req: AssignRequest):
         for d in state.doctors.values()
     ]
 
-    patient_ids = req.patient_ids or list(state.patients.keys())
     patient_requests = []
 
-    for pid in patient_ids:
-        patient = state.patients.get(pid)
-        if patient is None:
-            continue
+    if selected_mode == "open":
+        candidate_ids = req.patient_ids or list(state.patients.keys())
+        for pid in candidate_ids:
+            patient = state.patients.get(pid)
+            if patient is None:
+                continue
 
-        cands = patient.get("candidates", [])
-        if not cands:
-            continue
+            if patient.get("assigned_doctor_id") is not None:
+                continue
 
-        candidates = [
-            Candidate(
-                doctor_id=c["doctor_id"],
-                score=c.get("score", 1.0 - c.get("distance", 0.0)),
-                raw_value=c.get("distance"),
-                raw_value_type="cosine_distance",
-            )
-            for c in cands
-        ]
+            patient_request = _build_patient_request(pid, patient)
+            if patient_request is not None:
+                patient_requests.append(patient_request)
+    else:
+        candidate_ids = req.patient_ids or list(state.patients.keys())
+        for pid in candidate_ids:
+            patient = state.patients.get(pid)
+            if patient is None:
+                continue
 
-        patient_requests.append(
-            PatientRequest(patient_id=pid, candidates=candidates)
-        )
+            patient_request = _build_patient_request(pid, patient)
+            if patient_request is not None:
+                patient_requests.append(patient_request)
 
     if not patient_requests:
+        if selected_mode == "open":
+            raise HTTPException(400, "No new unassigned patients with search results to assign")
         raise HTTPException(400, "No patients with search results to assign")
 
     service = AssignmentService(config=state.assignment_config)
-    summary = service.assign_new_patients(
-        new_patients=patient_requests,
-        doctors=doctor_objects,
-    )
+    if selected_mode == "overwrite":
+        summary = service.rebalance_batch(
+            patients_to_reassign=patient_requests,
+            doctors=doctor_objects,
+        )
+    else:
+        summary = service.assign_new_patients(
+            new_patients=patient_requests,
+            doctors=doctor_objects,
+        )
 
     decisions = []
     for d in summary.decisions:
@@ -382,10 +515,7 @@ def run_assignment(req: AssignRequest):
         "decisions": decisions,
     }
 
-    # Update doctor loads
-    for doc_id, load in summary.doctor_loads.items():
-        if doc_id in state.doctors:
-            state.doctors[doc_id]["current_load"] = load
+    _apply_assignment_decisions(summary.decisions)
 
     state.last_assignment = result
     return result
@@ -418,10 +548,17 @@ def run_manual_assignment(req: ManualAssignRequest):
         )
 
     service = AssignmentService(config=state.assignment_config)
-    summary = service.assign_new_patients(
-        new_patients=patient_requests,
-        doctors=doctor_objects,
-    )
+    selected_mode = config.get_selected_mode()
+    if selected_mode == "overwrite":
+        summary = service.rebalance_batch(
+            patients_to_reassign=patient_requests,
+            doctors=doctor_objects,
+        )
+    else:
+        summary = service.assign_new_patients(
+            new_patients=patient_requests,
+            doctors=doctor_objects,
+        )
 
     decisions = []
     for d in summary.decisions:
@@ -447,9 +584,7 @@ def run_manual_assignment(req: ManualAssignRequest):
         "decisions": decisions,
     }
 
-    for doc_id, load in summary.doctor_loads.items():
-        if doc_id in state.doctors:
-            state.doctors[doc_id]["current_load"] = load
+    _apply_assignment_decisions(summary.decisions)
 
     state.last_assignment = result
     return result
@@ -482,10 +617,12 @@ def update_config(cfg: ConfigModel):
         )
         model_changed = cfg.model_key is not None and cfg.model_key != config.SELECTED_MODEL_KEY
         mode_changed = cfg.mode is not None and cfg.mode != config.get_selected_mode()
-        if model_changed or mode_changed:
+        if model_changed:
             new_model_key = cfg.model_key or config.SELECTED_MODEL_KEY
             new_mode = cfg.mode or config.get_selected_mode()
             state.change_model_and_reset(new_model_key, new_mode)
+        elif mode_changed:
+            config.set_selected_mode(cfg.mode or config.get_selected_mode())
         return {"status": "ok", "config": get_config()}
     except ValueError as e:
         raise HTTPException(400, detail=str(e))
@@ -563,11 +700,16 @@ def load_demo_data():
                 "content_preview": result["content"][:300],
                 "content": result["content"],
                 "language": result.get("language", "?"),
+                "assigned_doctor_id": None,
+                "assigned_slot_index": None,
                 "candidates": [],
             }
             loaded_patients.append(pat["patient_id"])
         except Exception:
             traceback.print_exc()
+
+    state.save_patients_to_cache()
+    state.sync_doctor_loads_from_patients()
 
     return {
         "status": "ok",
@@ -579,6 +721,8 @@ def load_demo_data():
 @app.on_event("startup")
 async def startup():
     state.try_init_database()
+    state.load_patients_from_cache()
+    state.sync_doctor_loads_from_patients()
 
 
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
