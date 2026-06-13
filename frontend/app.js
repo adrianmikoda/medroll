@@ -260,6 +260,7 @@ window.deletePatient = async function (id) {
     try {
         await api('DELETE', `/api/patients/${id}`);
         refreshPatients();
+        refreshDoctors();
         refreshDashboard();
     } catch (e) {
         alert('Error: ' + e.message);
