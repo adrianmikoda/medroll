@@ -12,9 +12,6 @@ def raw_value_to_score(
     raw_value: float,
     strategy: RawValueStrategy = "inverse",
 ) -> float:
-    """
-    Zamieniam surową wartość z retrievalu na score, gdzie większy = lepszy.
-    """
 
     if strategy == "inverse":
         return 1.0 / (1.0 + max(raw_value, 0.0))
