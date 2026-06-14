@@ -181,7 +181,6 @@ class AppState:
 state = AppState()
 
 
-# ── Pydantic request/response models ─────────────────────────────
 class ConfigModel(BaseModel):
     load_penalty_weight: float = 0.05
     load_penalty_exponent: float = 1.0
@@ -192,7 +191,7 @@ class ConfigModel(BaseModel):
 
 
 class AssignRequest(BaseModel):
-    patient_ids: list[str] | None = None  # None = all patients
+    patient_ids: list[str] | None = None
 
 
 class SearchRequest(BaseModel):
@@ -214,7 +213,6 @@ class ManualAssignRequest(BaseModel):
     patients: list[ManualPatientInput]
 
 
-# ── Health ────────────────────────────────────────────────────────
 @app.get("/api/health")
 def health():
     return {
@@ -227,7 +225,6 @@ def health():
     }
 
 
-# ── Doctors ───────────────────────────────────────────────────────
 @app.post("/api/doctors")
 async def add_doctor(
     file: UploadFile = File(...),
@@ -250,7 +247,6 @@ async def add_doctor(
         if result.get("status") == "error":
             raise HTTPException(400, result.get("message"))
 
-        # Try to add to vector DB
         if state.database is not None:
             try:
                 state.database.add(
@@ -295,7 +291,6 @@ def delete_doctor(doctor_id: str):
     return {"status": "ok", "deleted": doctor_id}
 
 
-# ── Patients ──────────────────────────────────────────────────────
 @app.post("/api/patients")
 async def add_patient(
     file: UploadFile = File(...),
@@ -324,7 +319,7 @@ async def add_patient(
             "language": result.get("language", "?"),
             "assigned_doctor_id": None,
             "assigned_slot_index": None,
-            "candidates": [],  # filled by search
+            "candidates": [],
         }
 
         state.save_patients_to_cache()
@@ -404,7 +399,6 @@ def _apply_assignment_decisions(decisions) -> None:
     state.sync_doctor_loads_from_patients()
 
 
-# ── Search ────────────────────────────────────────────────────────
 @app.post("/api/search")
 def search_patient(req: SearchRequest):
     if not state.db_ready or state.database is None:
@@ -430,7 +424,6 @@ def search_patient(req: SearchRequest):
     return {"patient_id": req.patient_id, "results": candidates}
 
 
-# ── Assignment ────────────────────────────────────────────────────
 @app.post("/api/assign")
 def run_assignment(req: AssignRequest):
     if not state.doctors:
@@ -521,7 +514,6 @@ def run_assignment(req: AssignRequest):
     return result
 
 
-# ── Manual assignment (without model) ─────────────────────────────
 @app.post("/api/assign/manual")
 def run_manual_assignment(req: ManualAssignRequest):
     if not state.doctors:
@@ -590,7 +582,6 @@ def run_manual_assignment(req: ManualAssignRequest):
     return result
 
 
-# ── Config ────────────────────────────────────────────────────────
 @app.get("/api/config")
 def get_config():
     c = state.assignment_config
@@ -628,7 +619,6 @@ def update_config(cfg: ConfigModel):
         raise HTTPException(400, detail=str(e))
 
 
-# ── Demo data loader ──────────────────────────────────────────────
 @app.post("/api/demo/load")
 def load_demo_data():
     """Load fake_data doctors and patients for quick testing."""

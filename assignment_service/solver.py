@@ -31,12 +31,7 @@ class GlobalCapacityAssignmentSolver:
         new_patients: list[PatientRequest],
         doctors: list[Doctor],
     ) -> AssignmentSummary:
-        """
-        Tryb standardowy:
-        - przekazuję tylko nowych pacjentów
-        - istniejące przypisania są zamrożone w current_load lekarzy
-        - niczego starego nie przestawiam
-        """
+
         return self._solve_internal(
             patients=new_patients,
             doctors=doctors,
@@ -48,12 +43,7 @@ class GlobalCapacityAssignmentSolver:
         patients_to_reassign: list[PatientRequest],
         doctors: list[Doctor],
     ) -> AssignmentSummary:
-        """
-        Tryb specjalny:
-        - batch jest przeliczany od nowa
-        - lekarzy traktuję tak, jakby dla TEGO batcha startowali od zera
-        - to może zmienić wcześniejsze przypisania w obrębie przekazanego batcha
-        """
+
         rebalance_doctors = [
             replace(doctor, current_load=0)
             for doctor in doctors

@@ -14,10 +14,7 @@ class AssignmentService:
         new_patients: list[PatientRequest],
         doctors: list[Doctor],
     ) -> AssignmentSummary:
-        """
-        Domyślny tryb szpitalny.
-        Już istniejących przypisań nie ruszam.
-        """
+    
         return self.solver.solve_incremental(
             new_patients=new_patients,
             doctors=doctors,
@@ -28,10 +25,7 @@ class AssignmentService:
         patients_to_reassign: list[PatientRequest],
         doctors: list[Doctor],
     ) -> AssignmentSummary:
-        """
-        Tryb specjalny.
-        Pozwala przeliczyć przekazany batch od nowa.
-        """
+
         return self.solver.solve_rebalance(
             patients_to_reassign=patients_to_reassign,
             doctors=doctors,

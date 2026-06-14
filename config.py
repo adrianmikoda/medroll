@@ -1,5 +1,3 @@
-import os
-
 MODEL_CHOICES = {
     "all-MiniLM-L6-v2": "all-MiniLM-L6-v2",
     "sentence-transformers/embeddinggemma-300m-medical": "sentence-transformers/embeddinggemma-300m-medical",
