@@ -15,7 +15,7 @@ from converter_service.file_converter import FileConverter
 from assignment_service import (
     AssignmentConfig,
     AssignmentService,
-    Doctor,
+    Physician,
     PatientRequest,
     Candidate,
     patient_from_lancedb_rows,
@@ -28,13 +28,13 @@ TEMP_DIR = "temp_uploads"
 os.makedirs(TEMP_DIR, exist_ok=True)
 
 app = FastAPI(
-    title="MedRoll — Patient-Doctor Assignment System",
+    title="MedRoll — Patient-Physician Assignment System",
     version="1.0.0",
 )
 
 class AppState:
     def __init__(self):
-        self.doctors: dict[str, dict[str, Any]] = {}
+        self.physicians: dict[str, dict[str, Any]] = {}
         self.patients: dict[str, dict[str, Any]] = {}
         self.patient_cache_path = os.path.join("./lancedb", "patients_gui_cache.json")
         self.assignment_config = AssignmentConfig(
@@ -59,29 +59,29 @@ class AppState:
             from transformer_service.database import Database
             self.database = Database(
                 db_path="./lancedb",
-                table_name="doctors_gui",
+                table_name="physicians_gui",
                 model_name=selected_model_name,
-                table_mode="open",
+                table_mode=config.get_selected_mode(),
                 vector_dim=selected_vector_dim,
             )
             self.database_model_name = selected_model_name
             self.db_ready = True
-            self.load_doctors_from_db()
+            self.load_physicians_from_db()
             self.load_patients_from_cache()
-            self.sync_doctor_loads_from_patients()
+            self.sync_physician_loads_from_patients()
         except Exception as e:
             print(f"[WARN] Could not initialize model/DB: {e}")
             self.db_ready = False
 
-    def load_doctors_from_db(self):
+    def load_physicians_from_db(self):
         if self.database is None:
             return
         try:
             records = self.database.get_all_records()
-            self.doctors.clear()
+            self.physicians.clear()
             for r in records:
-                doc_id = r.get("doctor_id")
-                if not doc_id:
+                phys_id = r.get("physician_id")
+                if not phys_id:
                     continue
                 capacity = r.get("capacity", 5)
                 try:
@@ -93,18 +93,18 @@ class AppState:
                 except Exception:
                     capacity = 5
 
-                self.doctors[doc_id] = {
-                    "doctor_id": doc_id,
-                    "name": r.get("name") or doc_id,
+                self.physicians[phys_id] = {
+                    "physician_id": phys_id,
+                    "name": r.get("name") or phys_id,
                     "capacity": capacity,
                     "current_load": 0,
                     "filename": r.get("filename") or "",
                     "content_preview": (r.get("text") or "")[:300],
                     "language": r.get("language") or "?",
                 }
-            print(f"[INFO] Loaded {len(self.doctors)} doctors from database cache.")
+            print(f"[INFO] Loaded {len(self.physicians)} physicians from database cache.")
         except Exception as e:
-            print(f"[WARN] Failed to load doctors from database: {e}")
+            print(f"[WARN] Failed to load physicians from database: {e}")
 
     def load_patients_from_cache(self):
         self.patients.clear()
@@ -130,7 +130,7 @@ class AppState:
                     "content_preview": record.get("content_preview") or (record.get("content") or "")[:300],
                     "content": record.get("content") or "",
                     "language": record.get("language") or "?",
-                    "assigned_doctor_id": record.get("assigned_doctor_id"),
+                    "assigned_physician_id": record.get("assigned_physician_id"),
                     "assigned_slot_index": record.get("assigned_slot_index"),
                     "candidates": record.get("candidates") or [],
                 }
@@ -155,21 +155,21 @@ class AppState:
         except Exception as e:
             print(f"[WARN] Failed to clear patients cache: {e}")
 
-    def sync_doctor_loads_from_patients(self):
-        loads: dict[str, int] = {doc_id: 0 for doc_id in self.doctors}
+    def sync_physician_loads_from_patients(self):
+        loads: dict[str, int] = {phys_id: 0 for phys_id in self.physicians}
 
         for patient in self.patients.values():
-            assigned_doctor_id = patient.get("assigned_doctor_id")
-            if assigned_doctor_id in loads:
-                loads[assigned_doctor_id] += 1
+            assigned_physician_id = patient.get("assigned_physician_id")
+            if assigned_physician_id in loads:
+                loads[assigned_physician_id] += 1
 
-        for doc_id, doctor in self.doctors.items():
-            doctor["current_load"] = loads.get(doc_id, 0)
+        for phys_id, physician in self.physicians.items():
+            physician["current_load"] = loads.get(phys_id, 0)
 
     def change_model_and_reset(self, new_model_key: str, new_mode: str):
         config.set_model(new_model_key)
         config.set_selected_mode(new_mode)
-        self.doctors.clear()
+        self.physicians.clear()
         self.patients.clear()
         self.last_assignment = None
         self.database = None
@@ -181,7 +181,6 @@ class AppState:
 state = AppState()
 
 
-# ── Pydantic request/response models ─────────────────────────────
 class ConfigModel(BaseModel):
     load_penalty_weight: float = 0.05
     load_penalty_exponent: float = 1.0
@@ -192,7 +191,7 @@ class ConfigModel(BaseModel):
 
 
 class AssignRequest(BaseModel):
-    patient_ids: list[str] | None = None  # None = all patients
+    patient_ids: list[str] | None = None
 
 
 class SearchRequest(BaseModel):
@@ -201,7 +200,7 @@ class SearchRequest(BaseModel):
 
 
 class ManualCandidateInput(BaseModel):
-    doctor_id: str
+    physician_id: str
     score: float
 
 
@@ -214,7 +213,6 @@ class ManualAssignRequest(BaseModel):
     patients: list[ManualPatientInput]
 
 
-# ── Health ────────────────────────────────────────────────────────
 @app.get("/api/health")
 def health():
     return {
@@ -222,21 +220,20 @@ def health():
         "model_loaded": state.db_ready,
         "model_name": config.get_selected_model(),
         "model_key": config.SELECTED_MODEL_KEY,
-        "doctors_count": len(state.doctors),
+        "physicians_count": len(state.physicians),
         "patients_count": len(state.patients),
     }
 
 
-# ── Doctors ───────────────────────────────────────────────────────
-@app.post("/api/doctors")
-async def add_doctor(
+@app.post("/api/physicians")
+async def add_physician(
     file: UploadFile = File(...),
-    doctor_id: str = Form(...),
+    physician_id: str = Form(...),
     name: str = Form(""),
     capacity: int = Form(5),
 ):
-    if doctor_id in state.doctors:
-        raise HTTPException(400, f"Doctor '{doctor_id}' already exists")
+    if physician_id in state.physicians:
+        raise HTTPException(400, f"Physician '{physician_id}' already exists")
 
     file_path = os.path.join(TEMP_DIR, file.filename)
     try:
@@ -250,23 +247,22 @@ async def add_doctor(
         if result.get("status") == "error":
             raise HTTPException(400, result.get("message"))
 
-        # Try to add to vector DB
         if state.database is not None:
             try:
                 state.database.add(
-                    doctor_id=doctor_id,
+                    physician_id=physician_id,
                     data=result["content"],
                     filename=result["filename"],
-                    name=name or doctor_id,
+                    name=name or physician_id,
                     capacity=capacity,
                     language=result.get("language", "?"),
                 )
             except Exception as e:
                 print(f"[WARN] DB add failed: {e}")
 
-        state.doctors[doctor_id] = {
-            "doctor_id": doctor_id,
-            "name": name or doctor_id,
+        state.physicians[physician_id] = {
+            "physician_id": physician_id,
+            "name": name or physician_id,
             "capacity": capacity,
             "current_load": 0,
             "filename": result["filename"],
@@ -274,28 +270,27 @@ async def add_doctor(
             "language": result.get("language", "?"),
         }
 
-        state.sync_doctor_loads_from_patients()
+        state.sync_physician_loads_from_patients()
 
-        return {"status": "ok", "doctor": state.doctors[doctor_id]}
+        return {"status": "ok", "physician": state.physicians[physician_id]}
     finally:
         if os.path.exists(file_path):
             os.remove(file_path)
 
 
-@app.get("/api/doctors")
-def list_doctors():
-    return {"doctors": list(state.doctors.values())}
+@app.get("/api/physicians")
+def list_physicians():
+    return {"physicians": list(state.physicians.values())}
 
 
-@app.delete("/api/doctors/{doctor_id}")
-def delete_doctor(doctor_id: str):
-    if doctor_id not in state.doctors:
-        raise HTTPException(404, f"Doctor '{doctor_id}' not found")
-    del state.doctors[doctor_id]
-    return {"status": "ok", "deleted": doctor_id}
+@app.delete("/api/physicians/{physician_id}")
+def delete_physician(physician_id: str):
+    if physician_id not in state.physicians:
+        raise HTTPException(404, f"Physician '{physician_id}' not found")
+    del state.physicians[physician_id]
+    return {"status": "ok", "deleted": physician_id}
 
 
-# ── Patients ──────────────────────────────────────────────────────
 @app.post("/api/patients")
 async def add_patient(
     file: UploadFile = File(...),
@@ -322,9 +317,9 @@ async def add_patient(
             "content_preview": result["content"][:300],
             "content": result["content"],
             "language": result.get("language", "?"),
-            "assigned_doctor_id": None,
+            "assigned_physician_id": None,
             "assigned_slot_index": None,
-            "candidates": [],  # filled by search
+            "candidates": [],
         }
 
         state.save_patients_to_cache()
@@ -346,7 +341,7 @@ def delete_patient(patient_id: str):
         raise HTTPException(404, f"Patient '{patient_id}' not found")
     del state.patients[patient_id]
     state.save_patients_to_cache()
-    state.sync_doctor_loads_from_patients()
+    state.sync_physician_loads_from_patients()
     return {"status": "ok", "deleted": patient_id}
 
 
@@ -360,7 +355,7 @@ def _make_patient_record(
     content: str,
     language: str,
     candidates: list[dict[str, Any]] | None = None,
-    assigned_doctor_id: str | None = None,
+    assigned_physician_id: str | None = None,
     assigned_slot_index: int | None = None,
 ) -> dict[str, Any]:
     return {
@@ -369,7 +364,7 @@ def _make_patient_record(
         "content_preview": content[:300],
         "content": content,
         "language": language,
-        "assigned_doctor_id": assigned_doctor_id,
+        "assigned_physician_id": assigned_physician_id,
         "assigned_slot_index": assigned_slot_index,
         "candidates": candidates or [],
     }
@@ -382,7 +377,7 @@ def _build_patient_request(pid: str, patient: dict[str, Any]) -> PatientRequest 
 
     candidates = [
         Candidate(
-            doctor_id=c["doctor_id"],
+            physician_id=c["physician_id"],
             score=c.get("score", 1.0 - c.get("distance", 0.0)),
             raw_value=c.get("distance"),
             raw_value_type="cosine_distance",
@@ -397,14 +392,13 @@ def _apply_assignment_decisions(decisions) -> None:
     for decision in decisions:
         patient = state.patients.get(decision.patient_id)
         if patient is not None:
-            patient["assigned_doctor_id"] = decision.assigned_doctor_id
+            patient["assigned_physician_id"] = decision.assigned_physician_id
             patient["assigned_slot_index"] = decision.assigned_slot_index
 
     state.save_patients_to_cache()
-    state.sync_doctor_loads_from_patients()
+    state.sync_physician_loads_from_patients()
 
 
-# ── Search ────────────────────────────────────────────────────────
 @app.post("/api/search")
 def search_patient(req: SearchRequest):
     if not state.db_ready or state.database is None:
@@ -419,7 +413,7 @@ def search_patient(req: SearchRequest):
     candidates = []
     for row in rows:
         candidates.append({
-            "doctor_id": row.get("doctor_id", "?"),
+            "physician_id": row.get("physician_id", "?"),
             "filename": row.get("filename", "?"),
             "distance": row.get("_distance"),
             "score": 1.0 - row.get("_distance", 0.0),
@@ -430,22 +424,21 @@ def search_patient(req: SearchRequest):
     return {"patient_id": req.patient_id, "results": candidates}
 
 
-# ── Assignment ────────────────────────────────────────────────────
 @app.post("/api/assign")
 def run_assignment(req: AssignRequest):
-    if not state.doctors:
-        raise HTTPException(400, "No doctors registered")
+    if not state.physicians:
+        raise HTTPException(400, "No physicians registered")
 
     selected_mode = config.get_selected_mode()
 
-    doctor_objects = [
-        Doctor(
-            doctor_id=d["doctor_id"],
+    physician_objects = [
+        Physician(
+            physician_id=d["physician_id"],
             name=d["name"],
             capacity=d["capacity"],
             current_load=d["current_load"],
         )
-        for d in state.doctors.values()
+        for d in state.physicians.values()
     ]
 
     patient_requests = []
@@ -457,7 +450,7 @@ def run_assignment(req: AssignRequest):
             if patient is None:
                 continue
 
-            if patient.get("assigned_doctor_id") is not None:
+            if patient.get("assigned_physician_id") is not None:
                 continue
 
             patient_request = _build_patient_request(pid, patient)
@@ -483,19 +476,19 @@ def run_assignment(req: AssignRequest):
     if selected_mode == "overwrite":
         summary = service.rebalance_batch(
             patients_to_reassign=patient_requests,
-            doctors=doctor_objects,
+            physicians=physician_objects,
         )
     else:
         summary = service.assign_new_patients(
             new_patients=patient_requests,
-            doctors=doctor_objects,
+            physicians=physician_objects,
         )
 
     decisions = []
     for d in summary.decisions:
         decisions.append({
             "patient_id": d.patient_id,
-            "assigned_doctor_id": d.assigned_doctor_id,
+            "assigned_physician_id": d.assigned_physician_id,
             "assigned_slot_index": d.assigned_slot_index,
             "candidate_rank": d.candidate_rank,
             "base_score": round(d.base_score, 4),
@@ -511,7 +504,7 @@ def run_assignment(req: AssignRequest):
         "total_base_score": round(summary.total_base_score, 4),
         "total_penalty": round(summary.total_penalty, 4),
         "total_final_score": round(summary.total_final_score, 4),
-        "doctor_loads": summary.doctor_loads,
+        "physician_loads": summary.physician_loads,
         "decisions": decisions,
     }
 
@@ -521,26 +514,25 @@ def run_assignment(req: AssignRequest):
     return result
 
 
-# ── Manual assignment (without model) ─────────────────────────────
 @app.post("/api/assign/manual")
 def run_manual_assignment(req: ManualAssignRequest):
-    if not state.doctors:
-        raise HTTPException(400, "No doctors registered")
+    if not state.physicians:
+        raise HTTPException(400, "No physicians registered")
 
-    doctor_objects = [
-        Doctor(
-            doctor_id=d["doctor_id"],
+    physician_objects = [
+        Physician(
+            physician_id=d["physician_id"],
             name=d["name"],
             capacity=d["capacity"],
             current_load=d["current_load"],
         )
-        for d in state.doctors.values()
+        for d in state.physicians.values()
     ]
 
     patient_requests = []
     for mp in req.patients:
         candidates = [
-            Candidate(doctor_id=c.doctor_id, score=c.score)
+            Candidate(physician_id=c.physician_id, score=c.score)
             for c in mp.candidates
         ]
         patient_requests.append(
@@ -552,19 +544,19 @@ def run_manual_assignment(req: ManualAssignRequest):
     if selected_mode == "overwrite":
         summary = service.rebalance_batch(
             patients_to_reassign=patient_requests,
-            doctors=doctor_objects,
+            physicians=physician_objects,
         )
     else:
         summary = service.assign_new_patients(
             new_patients=patient_requests,
-            doctors=doctor_objects,
+            physicians=physician_objects,
         )
 
     decisions = []
     for d in summary.decisions:
         decisions.append({
             "patient_id": d.patient_id,
-            "assigned_doctor_id": d.assigned_doctor_id,
+            "assigned_physician_id": d.assigned_physician_id,
             "assigned_slot_index": d.assigned_slot_index,
             "candidate_rank": d.candidate_rank,
             "base_score": round(d.base_score, 4),
@@ -580,7 +572,7 @@ def run_manual_assignment(req: ManualAssignRequest):
         "total_base_score": round(summary.total_base_score, 4),
         "total_penalty": round(summary.total_penalty, 4),
         "total_final_score": round(summary.total_final_score, 4),
-        "doctor_loads": summary.doctor_loads,
+        "physician_loads": summary.physician_loads,
         "decisions": decisions,
     }
 
@@ -590,7 +582,6 @@ def run_manual_assignment(req: ManualAssignRequest):
     return result
 
 
-# ── Config ────────────────────────────────────────────────────────
 @app.get("/api/config")
 def get_config():
     c = state.assignment_config
@@ -622,20 +613,22 @@ def update_config(cfg: ConfigModel):
             new_mode = cfg.mode or config.get_selected_mode()
             state.change_model_and_reset(new_model_key, new_mode)
         elif mode_changed:
-            config.set_selected_mode(cfg.mode or config.get_selected_mode())
+            new_mode = cfg.mode or config.get_selected_mode()
+            config.set_selected_mode(new_mode)
+            if new_mode == "overwrite":
+                state.change_model_and_reset(config.SELECTED_MODEL_KEY, new_mode)
         return {"status": "ok", "config": get_config()}
     except ValueError as e:
         raise HTTPException(400, detail=str(e))
 
 
-# ── Demo data loader ──────────────────────────────────────────────
 @app.post("/api/demo/load")
 def load_demo_data():
-    """Load fake_data doctors and patients for quick testing."""
-    doctor_files = [
-        {"doctor_id": "doc_cardio", "filename": "cv_kardiochirurg.pdf", "capacity": 3, "name": "Kardiochirurg"},
-        {"doctor_id": "doc_ortho", "filename": "cv_ortopeda.pdf", "capacity": 3, "name": "Ortopeda"},
-        {"doctor_id": "doc_psych", "filename": "cv_psychiatra.pdf", "capacity": 3, "name": "Psychiatra"},
+    """Load fake_data physicians and patients for quick testing."""
+    physician_files = [
+        {"physician_id": "doc_cardio", "filename": "cv_kardiochirurg.pdf", "capacity": 3, "name": "Kardiochirurg"},
+        {"physician_id": "doc_ortho", "filename": "cv_ortopeda.pdf", "capacity": 3, "name": "Ortopeda"},
+        {"physician_id": "doc_psych", "filename": "cv_psychiatra.pdf", "capacity": 3, "name": "Psychiatra"},
     ]
     patient_files = [
         {"patient_id": "pat_1", "filename": "karta_1.pdf"},
@@ -643,10 +636,10 @@ def load_demo_data():
         {"patient_id": "pat_3", "filename": "karta_3.pdf"},
     ]
 
-    loaded_doctors = []
+    loaded_physicians = []
     loaded_patients = []
 
-    for doc in doctor_files:
+    for doc in physician_files:
         path = f"./fake_data/cvs/{doc['filename']}"
         if not os.path.exists(path):
             continue
@@ -660,7 +653,7 @@ def load_demo_data():
             if state.database is not None:
                 try:
                     state.database.add(
-                        doctor_id=doc["doctor_id"],
+                        physician_id=doc["physician_id"],
                         data=result["content"],
                         filename=result["filename"],
                         name=doc["name"],
@@ -670,8 +663,8 @@ def load_demo_data():
                 except Exception:
                     pass
 
-            state.doctors[doc["doctor_id"]] = {
-                "doctor_id": doc["doctor_id"],
+            state.physicians[doc["physician_id"]] = {
+                "physician_id": doc["physician_id"],
                 "name": doc["name"],
                 "capacity": doc["capacity"],
                 "current_load": 0,
@@ -679,7 +672,7 @@ def load_demo_data():
                 "content_preview": result["content"][:300],
                 "language": result.get("language", "?"),
             }
-            loaded_doctors.append(doc["doctor_id"])
+            loaded_physicians.append(doc["physician_id"])
         except Exception:
             traceback.print_exc()
 
@@ -700,7 +693,7 @@ def load_demo_data():
                 "content_preview": result["content"][:300],
                 "content": result["content"],
                 "language": result.get("language", "?"),
-                "assigned_doctor_id": None,
+                "assigned_physician_id": None,
                 "assigned_slot_index": None,
                 "candidates": [],
             }
@@ -709,11 +702,11 @@ def load_demo_data():
             traceback.print_exc()
 
     state.save_patients_to_cache()
-    state.sync_doctor_loads_from_patients()
+    state.sync_physician_loads_from_patients()
 
     return {
         "status": "ok",
-        "loaded_doctors": loaded_doctors,
+        "loaded_physicians": loaded_physicians,
         "loaded_patients": loaded_patients,
     }
 
@@ -722,7 +715,7 @@ def load_demo_data():
 async def startup():
     state.try_init_database()
     state.load_patients_from_cache()
-    state.sync_doctor_loads_from_patients()
+    state.sync_physician_loads_from_patients()
 
 
 app.mount("/static", StaticFiles(directory="frontend"), name="static")

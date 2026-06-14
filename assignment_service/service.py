@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .config import AssignmentConfig
-from .models import AssignmentSummary, Doctor, PatientRequest
+from .models import AssignmentSummary, Physician, PatientRequest
 from .solver import GlobalCapacityAssignmentSolver
 
 
@@ -12,27 +12,21 @@ class AssignmentService:
     def assign_new_patients(
         self,
         new_patients: list[PatientRequest],
-        doctors: list[Doctor],
+        physicians: list[Physician],
     ) -> AssignmentSummary:
-        """
-        Domyślny tryb szpitalny.
-        Już istniejących przypisań nie ruszam.
-        """
+    
         return self.solver.solve_incremental(
             new_patients=new_patients,
-            doctors=doctors,
+            physicians=physicians,
         )
 
     def rebalance_batch(
         self,
         patients_to_reassign: list[PatientRequest],
-        doctors: list[Doctor],
+        physicians: list[Physician],
     ) -> AssignmentSummary:
-        """
-        Tryb specjalny.
-        Pozwala przeliczyć przekazany batch od nowa.
-        """
+
         return self.solver.solve_rebalance(
             patients_to_reassign=patients_to_reassign,
-            doctors=doctors,
+            physicians=physicians,
         )

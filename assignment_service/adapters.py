@@ -12,9 +12,6 @@ def raw_value_to_score(
     raw_value: float,
     strategy: RawValueStrategy = "inverse",
 ) -> float:
-    """
-    Zamieniam surową wartość z retrievalu na score, gdzie większy = lepszy.
-    """
 
     if strategy == "inverse":
         return 1.0 / (1.0 + max(raw_value, 0.0))
@@ -32,7 +29,7 @@ def raw_value_to_score(
 def patient_from_lancedb_rows(
     patient_id: str,
     rows: Iterable[Mapping[str, Any]],
-    doctor_id_key: str = "doctor_id",
+    physician_id_key: str = "physician_id",
     raw_value_key: str = "_distance",
     score_key: str | None = None,
     raw_value_strategy: RawValueStrategy = "inverse",
@@ -41,10 +38,10 @@ def patient_from_lancedb_rows(
     candidates: list[Candidate] = []
 
     for row in rows:
-        if doctor_id_key not in row:
-            raise KeyError(f"Missing key '{doctor_id_key}' in search result row")
+        if physician_id_key not in row:
+            raise KeyError(f"Missing key '{physician_id_key}' in search result row")
 
-        doctor_id = str(row[doctor_id_key])
+        physician_id = str(row[physician_id_key])
 
         raw_value = None
         if raw_value_key in row and row[raw_value_key] is not None:
@@ -56,18 +53,18 @@ def patient_from_lancedb_rows(
             score = raw_value_to_score(raw_value, strategy=raw_value_strategy)
         else:
             raise ValueError(
-                f"Row for doctor_id='{doctor_id}' has neither '{score_key}' nor '{raw_value_key}'"
+                f"Row for physician_id='{physician_id}' has neither '{score_key}' nor '{raw_value_key}'"
             )
 
         metadata = {
             key: value
             for key, value in row.items()
-            if key not in {doctor_id_key, raw_value_key, score_key}
+            if key not in {physician_id_key, raw_value_key, score_key}
         }
 
         candidates.append(
             Candidate(
-                doctor_id=doctor_id,
+                physician_id=physician_id,
                 score=score,
                 raw_value=raw_value,
                 raw_value_type=raw_value_type,

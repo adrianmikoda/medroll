@@ -61,7 +61,7 @@ function initTabs() {
         if (tab) tab.classList.add('active');
 
         // Refresh data on tab switch
-        if (tabId === 'doctors') refreshDoctors();
+        if (tabId === 'physicians') refreshPhysicians();
         if (tabId === 'patients') refreshPatients();
         if (tabId === 'assign') refreshSearchDropdown();
         if (tabId === 'config') refreshConfig();
@@ -94,14 +94,14 @@ async function refreshDashboard() {
         $('sysStatus').textContent = 'ONLINE';
         $('modelStatus').textContent = data.model_loaded ? `LOADED (${data.model_name})` : 'OFFLINE';
         $('modelStatus').style.color = data.model_loaded ? '' : '#ff4444';
-        $('docCount').textContent = data.doctors_count;
+        $('physCount').textContent = data.physicians_count;
         $('patCount').textContent = data.patients_count;
 
         $('dashInfo').innerHTML = [
             `  status .............. <span class="msg-ok">ONLINE</span>`,
             `  model_loaded ........ ${data.model_loaded ? '<span class="msg-ok">true</span>' : '<span class="msg-err">false</span>'}`,
             `  active_model ........ <span class="hl">${data.model_name} (${data.model_key})</span>`,
-            `  doctors_registered .. <span class="hl">${data.doctors_count}</span>`,
+            `  physicians_registered .. <span class="hl">${data.physicians_count}</span>`,
             `  patients_registered . <span class="hl">${data.patients_count}</span>`,
             ``,
             data.model_loaded
@@ -123,7 +123,7 @@ $('btnLoadDemo').addEventListener('click', async () => {
     try {
         const data = await api('POST', '/api/demo/load');
         let out = `<span class="msg-ok">Demo data loaded successfully.</span>\n\n`;
-        out += `  doctors loaded:  ${data.loaded_doctors.join(', ') || 'none'}\n`;
+        out += `  physicians loaded:  ${data.loaded_physicians.join(', ') || 'none'}\n`;
         out += `  patients loaded: ${data.loaded_patients.join(', ') || 'none'}`;
         setOutput('demoOutput', out);
         refreshDashboard();
@@ -134,36 +134,36 @@ $('btnLoadDemo').addEventListener('click', async () => {
     }
 });
 
-// ── Doctors ─────────────────────────────────────────────────
-$('formAddDoctor').addEventListener('submit', async e => {
+// ── Physicians ──────────────────────────────────────────────
+$('formAddPhysician').addEventListener('submit', async e => {
     e.preventDefault();
-    setLoading('docAddOutput', 'Uploading & processing CV');
+    setLoading('physAddOutput', 'Uploading & processing CV');
 
     const form = new FormData();
-    form.append('file', $('docFile').files[0]);
-    form.append('doctor_id', $('docId').value.trim());
-    form.append('name', $('docName').value.trim());
-    form.append('capacity', $('docCapacity').value);
+    form.append('file', $('physFile').files[0]);
+    form.append('physician_id', $('physId').value.trim());
+    form.append('name', $('physName').value.trim());
+    form.append('capacity', $('physCapacity').value);
 
     try {
-        const data = await api('POST', '/api/doctors', form, true);
-        setOutput('docAddOutput', `<span class="msg-ok">Doctor '${escHtml(data.doctor.doctor_id)}' added successfully.</span>`);
-        $('formAddDoctor').reset();
-        $('docCapacity').value = '5';
-        refreshDoctors();
+        const data = await api('POST', '/api/physicians', form, true);
+        setOutput('physAddOutput', `<span class="msg-ok">Physician '${escHtml(data.physician.physician_id)}' added successfully.</span>`);
+        $('formAddPhysician').reset();
+        $('physCapacity').value = '5';
+        refreshPhysicians();
         refreshDashboard();
     } catch (e) {
-        setOutput('docAddOutput', `<span class="msg-err">ERROR: ${escHtml(e.message)}</span>`);
+        setOutput('physAddOutput', `<span class="msg-err">ERROR: ${escHtml(e.message)}</span>`);
     }
 });
 
-async function refreshDoctors() {
+async function refreshPhysicians() {
     try {
-        const data = await api('GET', '/api/doctors');
-        const docs = data.doctors;
+        const data = await api('GET', '/api/physicians');
+        const physicians = data.physicians;
 
-        if (!docs.length) {
-            setOutput('doctorsList', '<span class="dim">No doctors registered. Add a CV or load demo data.</span>');
+        if (!physicians.length) {
+            setOutput('physiciansList', '<span class="dim">No physicians registered. Add a CV or load demo data.</span>');
             return;
         }
 
@@ -172,30 +172,30 @@ async function refreshDoctors() {
     <th>ID</th><th>NAME</th><th>CAPACITY</th><th>LOAD</th><th>FILE</th><th>LANG</th><th></th>
 </tr></thead><tbody>`;
 
-        for (const d of docs) {
+        for (const d of physicians) {
             html += `<tr>
-    <td>${escHtml(d.doctor_id)}</td>
+    <td>${escHtml(d.physician_id)}</td>
     <td>${escHtml(d.name)}</td>
     <td>${d.capacity}</td>
     <td>${d.current_load}</td>
     <td>${escHtml(d.filename)}</td>
     <td>${escHtml(d.language)}</td>
-    <td><button class="cmd-btn cmd-btn-danger" onclick="deleteDoctor('${escHtml(d.doctor_id)}')">DEL</button></td>
+    <td><button class="cmd-btn cmd-btn-danger" onclick="deletePhysician('${escHtml(d.physician_id)}')">DEL</button></td>
 </tr>`;
         }
 
         html += '</tbody></table>';
-        setOutput('doctorsList', html);
+        setOutput('physiciansList', html);
     } catch (e) {
-        setOutput('doctorsList', `<span class="msg-err">ERROR: ${escHtml(e.message)}</span>`);
+        setOutput('physiciansList', `<span class="msg-err">ERROR: ${escHtml(e.message)}</span>`);
     }
 }
 
-window.deleteDoctor = async function (id) {
-    if (!confirm(`Delete doctor '${id}'?`)) return;
+window.deletePhysician = async function (id) {
+    if (!confirm(`Delete physician '${id}'?`)) return;
     try {
-        await api('DELETE', `/api/doctors/${id}`);
-        refreshDoctors();
+        await api('DELETE', `/api/physicians/${id}`);
+        refreshPhysicians();
         refreshDashboard();
     } catch (e) {
         alert('Error: ' + e.message);
@@ -260,7 +260,7 @@ window.deletePatient = async function (id) {
     try {
         await api('DELETE', `/api/patients/${id}`);
         refreshPatients();
-        refreshDoctors();
+        refreshPhysicians();
         refreshDashboard();
     } catch (e) {
         alert('Error: ' + e.message);
@@ -345,12 +345,12 @@ function renderSearchResultsHtml(data) {
     }
 
     let html = `<table class="cli-table">
-<thead><tr><th>#</th><th>DOCTOR_ID</th><th>FILE</th><th>DISTANCE</th><th>SCORE</th></tr></thead><tbody>`;
+<thead><tr><th>#</th><th>PHYSICIAN_ID</th><th>FILE</th><th>DISTANCE</th><th>SCORE</th></tr></thead><tbody>`;
 
     data.results.forEach((r, i) => {
         html += `<tr>
     <td>${i + 1}</td>
-    <td>${escHtml(r.doctor_id)}</td>
+    <td>${escHtml(r.physician_id)}</td>
     <td>${escHtml(r.filename || '?')}</td>
     <td>${r.distance !== null ? r.distance.toFixed(4) : '?'}</td>
     <td>${scoreBar(r.score)}</td>
@@ -368,7 +368,7 @@ $('btnAssign').addEventListener('click', async () => {
         const data = await api('POST', '/api/assign', {});
         renderAssignmentResults(data);
         setOutput('assignOutput', `<span class="msg-ok">Assignment complete. ${data.assigned_count} assigned, ${data.unassigned_count} unassigned.</span>`);
-        refreshDoctors();
+        refreshPhysicians();
         refreshDashboard();
     } catch (e) {
         setOutput('assignOutput', `<span class="msg-err">ERROR: ${escHtml(e.message)}</span>`);
@@ -388,11 +388,11 @@ function renderAssignmentResults(data) {
     <div class="summary-row"><span class="label">total_final_score</span><span class="val hl">${data.total_final_score}</span></div>
 </div>`;
 
-    // Doctor loads
+    // Physician loads
     html += `<div class="summary-block">
-    <div class="summary-title">═══ DOCTOR LOADS ═══</div>`;
-    for (const [docId, load] of Object.entries(data.doctor_loads)) {
-        html += `<div class="summary-row"><span class="label">${escHtml(docId)}</span><span class="val">${load}</span></div>`;
+    <div class="summary-title">═══ PHYSICIAN LOADS ═══</div>`;
+    for (const [physId, load] of Object.entries(data.physician_loads)) {
+        html += `<div class="summary-row"><span class="label">${escHtml(physId)}</span><span class="val">${load}</span></div>`;
     }
     html += '</div>';
 
@@ -407,7 +407,7 @@ function renderAssignmentResults(data) {
         <span class="decision-status ${isAssigned ? 'ok' : 'fail'}">${isAssigned ? '✓ ASSIGNED' : '✗ UNASSIGNED'}</span>
     </div>
     <div class="decision-details">
-        <span>doctor: <strong>${escHtml(d.assigned_doctor_id || '---')}</strong></span>
+        <span>physician: <strong>${escHtml(d.assigned_physician_id || '---')}</strong></span>
         <span>slot: ${d.assigned_slot_index ?? '---'}</span>
         <span>rank: ${d.candidate_rank ?? '---'}</span>
         <span>base: ${d.base_score}</span>

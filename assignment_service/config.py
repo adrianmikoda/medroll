@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 @dataclass(slots=True)
 class AssignmentConfig:
-    # Jak mocno karzę za zapełnianie kolejnych slotów lekarza.
+    # Jak mocno karzę za zapełnianie kolejnych slotów lekarza (physician).
     load_penalty_weight: float = 0.05
 
     # Jak szybko kara rośnie.
@@ -16,17 +16,17 @@ class AssignmentConfig:
     
     unassigned_score: float = 0.0
 
-    # próg minimalnego wyniku kandydata, poniżej którego pacjent nie zostanie przypisany do żadnego lekarza
+    # próg minimalnego wyniku kandydata, poniżej którego pacjent nie zostanie przypisany do żadnego lekarza (physician)
     min_candidate_score: float = float("-inf")
 
 
 def compute_slot_penalty(
     absolute_slot_index: int,
-    doctor_capacity: int,
+    physician_capacity: int,
     config: AssignmentConfig,
 ) -> float:
-    if doctor_capacity <= 0:
-        raise ValueError("doctor_capacity must be > 0")
+    if physician_capacity <= 0:
+        raise ValueError("physician_capacity must be > 0")
 
-    utilization = absolute_slot_index / doctor_capacity
+    utilization = absolute_slot_index / physician_capacity
     return config.load_penalty_weight * (utilization ** config.load_penalty_exponent)

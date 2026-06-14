@@ -14,7 +14,7 @@ class Database:
     def __init__(
         self,
         db_path: str = "./lancedb",
-        table_name: str = "doctors",
+        table_name: str = "physicians",
         table_mode: str = "overwrite",
         model_name: str = "nvidia/llama-embed-nemotron-8b",
         vector_dim: int = 4096
@@ -32,7 +32,7 @@ class Database:
         existing_tables = set(self.db.table_names())
 
         dynamic_schema = pa.schema([
-            pa.field("doctor_id", pa.string()),
+            pa.field("physician_id", pa.string()),
             pa.field("filename", pa.string()),
             pa.field("text", pa.string()),
             pa.field("vector", pa.list_(pa.float32(), list_size=vector_dim)),
@@ -50,13 +50,13 @@ class Database:
         elif table_name in existing_tables:
             self.tbl = self.db.open_table(table_name)
             try:
-                vector_field = self.tbl.schema.field("vector")
-                if hasattr(vector_field.type, "list_size") and vector_field.type.list_size != vector_dim:
-                    self.tbl = self.db.create_table(
-                        table_name,
-                        schema=dynamic_schema,
-                        mode="overwrite",
-                    )
+                    vector_field = self.tbl.schema.field("vector")
+                    if hasattr(vector_field.type, "list_size") and vector_field.type.list_size != vector_dim:
+                        self.tbl = self.db.create_table(
+                            table_name,
+                            schema=dynamic_schema,
+                            mode="overwrite",
+                        )
             except Exception:
                 self.tbl = self.db.create_table(
                     table_name,
@@ -70,7 +70,7 @@ class Database:
                 mode="create",
             )
 
-    def encode_doctor_text(self, text: str) -> list[float]:
+    def encode_physician_text(self, text: str) -> list[float]:
         return self.model.encode_document(text).tolist()
     
     def encode_patient_query(self, text: str) -> list[float]:
@@ -80,7 +80,7 @@ class Database:
 
     def add(
         self,
-        doctor_id: str,
+        physician_id: str,
         data: str,
         filename: str,
         name: str = "",
@@ -88,11 +88,11 @@ class Database:
         language: str = "?"
     ) -> None:
         row = {
-            "doctor_id": doctor_id,
+            "physician_id": physician_id,
             "filename": filename,
             "text": data,
-            "vector": self.encode_doctor_text(data),
-            "name": name or doctor_id,
+            "vector": self.encode_physician_text(data),
+            "name": name or physician_id,
             "capacity": capacity,
             "language": language,
         }
@@ -105,18 +105,18 @@ class Database:
             print(f"[WARN] Error fetching records from LanceDB: {e}")
             return []
 
-    def add_file(self, doctor_id: str, file_path: str, session_id: str = "1") -> dict[str, Any]:
+    def add_file(self, physician_id: str, file_path: str, session_id: str = "1") -> dict[str, Any]:
         data = json.loads(FileConverter(file_path, session_id).convert_to_json())
-        self.add_json(doctor_id=doctor_id, data=data)
+        self.add_json(physician_id=physician_id, data=data)
         
         return data
     
-    def add_json(self, doctor_id, data: dict[str, Any]) -> None:
+    def add_json(self, physician_id, data: dict[str, Any]) -> None:
         if data.get("status") == "error":
             raise ValueError(data["message"])
 
         self.add(
-            doctor_id=doctor_id,
+            physician_id=physician_id,
             data=data["content"],
             filename=data["filename"],
         )

@@ -5,8 +5,8 @@ from typing import Any
 
 
 @dataclass(slots=True)
-class Doctor:
-    doctor_id: str
+class Physician:
+    physician_id: str
     capacity: int
     current_load: int = 0
     name: str | None = None
@@ -18,7 +18,7 @@ class Doctor:
 
 @dataclass(slots=True)
 class Candidate:
-    doctor_id: str
+    physician_id: str
     score: float
     raw_value: float | None = None
     raw_value_type: str | None = None
@@ -31,15 +31,15 @@ class PatientRequest:
     metadata: dict[str, Any] = field(default_factory=dict)
 
 @dataclass(slots=True)
-class DoctorSlot:
-    doctor_id: str
+class PhysicianSlot:
+    physician_id: str
     slot_index: int
     penalty: float
 
 @dataclass(slots=True)
 class AssignmentDecision:
     patient_id: str
-    assigned_doctor_id: str | None
+    assigned_physician_id: str | None
     assigned_slot_index: int | None
     candidate_rank: int | None
     base_score: float
@@ -52,7 +52,7 @@ class AssignmentDecision:
 class AssignmentSummary:
     mode: str
     decisions: list[AssignmentDecision]
-    doctor_loads: dict[str, int]
+    physician_loads: dict[str, int]
     total_base_score: float
     total_penalty: float
     total_final_score: float

@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MedRoll :: Patient-Doctor Assignment System</title>
+    <title>MedRoll :: Patient-Physician Assignment System</title>
     <meta name="description"
-        content="MedRoll — AI-powered patient-to-doctor assignment system using vector search and the Hungarian algorithm.">
+        content="MedRoll — AI-powered patient-to-physician assignment system using vector search and the Hungarian algorithm.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap"
         rel="stylesheet">
@@ -23,7 +23,7 @@
             <div class="status-bar" id="statusBar">
                 <span class="status-item">STATUS: <span id="sysStatus" class="hl">BOOT</span></span>
                 <span class="status-item">MODEL: <span id="modelStatus" class="hl">---</span></span>
-                <span class="status-item">DOCTORS: <span id="docCount" class="hl">0</span></span>
+                <span class="status-item">PHYSICIANS: <span id="physCount" class="hl">0</span></span>
                 <span class="status-item">PATIENTS: <span id="patCount" class="hl">0</span></span>
             </div>
         </header>
@@ -31,7 +31,7 @@
         <!-- ── Nav ─────────────────────────────────────── -->
         <nav id="nav">
             <a href="#dashboard" class="nav-cmd active" data-tab="dashboard">[ dashboard ]</a>
-            <a href="#doctors" class="nav-cmd" data-tab="doctors">[ doctors ]</a>
+            <a href="#physicians" class="nav-cmd" data-tab="physicians">[ physicians ]</a>
             <a href="#patients" class="nav-cmd" data-tab="patients">[ patients ]</a>
             <a href="#assign" class="nav-cmd" data-tab="assign">[ assign ]</a>
             <a href="#config" class="nav-cmd" data-tab="config">[ config ]</a>
@@ -50,7 +50,7 @@
                 <div class="terminal-block">
                     <div class="prompt">> load_demo_data()</div>
                     <div class="output">
-                        <p class="dim">Load sample doctors (CVs) and patients (medical records) from fake_data/</p>
+                        <p class="dim">Load sample physicians (CVs) and patients (medical records) from fake_data/</p>
                         <button id="btnLoadDemo" class="cmd-btn">EXECUTE</button>
                         <div id="demoOutput" class="output-result"></div>
                     </div>
@@ -58,35 +58,35 @@
                 <div class="section-foot">└────────────────────────────────────────────────────────────┘</div>
             </section>
 
-            <!-- DOCTORS -->
-            <section id="tab-doctors" class="tab-content">
-                <div class="section-head">┌─ DOCTORS REGISTRY ─────────────────────────────────────────┐</div>
+            <!-- PHYSICIANS -->
+            <section id="tab-physicians" class="tab-content">
+                <div class="section-head">┌─ PHYSICIANS REGISTRY ──────────────────────────────────────┐</div>
                 <div class="terminal-block">
-                    <div class="prompt">> doctors.add(cv_file, doctor_id, name, capacity)</div>
-                    <form id="formAddDoctor" class="cmd-form">
+                    <div class="prompt">> physicians.add(cv_file, physician_id, name, capacity)</div>
+                    <form id="formAddPhysician" class="cmd-form">
                         <div class="form-row">
-                            <label>doctor_id:</label>
-                            <input type="text" id="docId" required placeholder="doc_example" autocomplete="off">
+                            <label>physician_id:</label>
+                            <input type="text" id="physId" required placeholder="phys_example" autocomplete="off">
                         </div>
                         <div class="form-row">
                             <label>name:</label>
-                            <input type="text" id="docName" placeholder="Dr. Smith" autocomplete="off">
+                            <input type="text" id="physName" placeholder="Dr. Smith" autocomplete="off">
                         </div>
                         <div class="form-row">
                             <label>capacity:</label>
-                            <input type="number" id="docCapacity" value="5" min="1" max="100">
+                            <input type="number" id="physCapacity" value="5" min="1" max="100">
                         </div>
                         <div class="form-row">
                             <label>cv_file:</label>
-                            <input type="file" id="docFile" accept=".pdf,.docx" required>
+                            <input type="file" id="physFile" accept=".pdf,.docx" required>
                         </div>
                         <button type="submit" class="cmd-btn">SUBMIT</button>
-                        <div id="docAddOutput" class="output-result"></div>
+                        <div id="physAddOutput" class="output-result"></div>
                     </form>
                 </div>
                 <div class="terminal-block">
-                    <div class="prompt">> doctors.list()</div>
-                    <div id="doctorsList" class="output-result"></div>
+                    <div class="prompt">> physicians.list()</div>
+                    <div id="physiciansList" class="output-result"></div>
                 </div>
                 <div class="section-foot">└────────────────────────────────────────────────────────────┘</div>
             </section>
@@ -138,7 +138,7 @@
                 </div>
 
                 <div class="terminal-block">
-                    <div class="prompt">> solver.assign(patients, doctors)</div>
+                    <div class="prompt">> solver.assign(patients, physicians)</div>
                     <div class="cmd-form">
                         <button id="btnAssign" class="cmd-btn">RUN ASSIGNMENT</button>
                         <div id="assignOutput" class="output-result"></div>
@@ -197,7 +197,7 @@
         </main>
 
         <footer id="footer">
-            <span class="dim">MedRoll │ Patient-Doctor Assignment System │ Hungarian Algorithm + LanceDB Vector
+            <span class="dim">MedRoll │ Patient-Physician Assignment System │ Hungarian Algorithm + LanceDB Vector
                 Search</span>
         </footer>
     </div>

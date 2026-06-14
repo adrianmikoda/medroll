@@ -4,7 +4,7 @@ from .models import (
     AssignmentDecision,
     AssignmentSummary,
     Candidate,
-    Doctor,
+    Physician,
     PatientRequest,
 )
 from .service import AssignmentService
@@ -16,7 +16,7 @@ __all__ = [
     "AssignmentDecision",
     "AssignmentSummary",
     "Candidate",
-    "Doctor",
+    "Physician",
     "PatientRequest",
     "AssignmentService",
 ]
