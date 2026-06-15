@@ -3,6 +3,7 @@
 - [Introduction](#introduction)
 - [Installation and Usage](#installation-and-usage)
 - [About](#about)
+- [Privacy & Data Preparation](#privacy--data-preparation)
 - [Features](#features)
   - [Configuration](#configuration)
   - [Physicians and Patients Registry](#physicians-and-patients-registry)
@@ -52,6 +53,15 @@ http://127.0.0.1:8000
 
 ## About
 MedRoll solves the patient-to-physician assignment problem. It reads physician CVs and patient medical charts, computes vector embeddings, and uses semantic matching to find good fits. A linear assignment solver then finds the best global matching — respecting physician capacity limits and penalizing uneven workloads to avoid burnout.
+
+## Privacy & Data Preparation
+To ensure the security of sensitive data, we recommend using our anonymization tools. 
+
+* **Optional Pre-processing**: We provide a separate anonymization process that can be run to sanitize documents.
+* **Workflow**: Users can process physician CVs and patient charts through this pipeline to automatically redact sensitive personal data (names, IDs, addresses) and replace them with secure placeholders before uploading them to the MedRoll registry.
+* **User Control**: As the anonymization is a voluntary pre-processing step, it is not necessary for the application to function properly.
+
+READ: [anonymization_docs](converter_service/docs/anonymization_docs.md)
 
 **Key Features:**
 - Reads CVs and medical records from `.pdf` and `.docx` files (via PyMuPDF and python-docx)
