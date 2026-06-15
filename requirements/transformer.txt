@@ -1,0 +1,10 @@
+-r base.txt
+-r converter.txt
+
+lancedb
+pylance
+pandas
+sentence-transformers
+torch
+transformers
+huggingface_hub
