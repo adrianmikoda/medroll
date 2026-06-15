@@ -1,0 +1,19 @@
+# file converter
+pymupdf
+python-docx
+pydantic
+
+# api
+fastapi
+uvicorn
+python-multipart
+
+# advanced file converter
+docling
+
+# llm
+torch
+transformers
+accelerate
+bitsandbytes
+hf_transfer
