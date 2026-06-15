@@ -1,0 +1,21 @@
+{
+  "session_id": "1",
+  "filename": "karta_3.pdf",
+  "chunks": [
+    "ID Protokołu: [ID_NUMBER]\nWydruk z Systemu Ratownictwa Medycznego\nKARTA INTERWENCJI NAGŁEJ – OCENA STANU\nKLINICZNEGO\nDANE IDENTYFIKACYJNE PACJENTA: ID: [ID_NUMBER] | Kobieta, lat 41\nOKOLICZNOŚCI PRZYJĘCIA: Pacjentka przywieziona przez Zespół Ratownictwa Me-\ndycznego w asyście służb porządkowych na wniosek zaniepokojonej rodziny.\nOPIS ZDARZENIA I WYWIAD:\nWedług relacji osób bliskich od około dwóch tygodni obserwowana jest narastająca dezorgani-\nzacja zachowania. Pacjentka drastycznie ograniczyła przyjmowanie płynów i pokarmów, izoluje\nsię w swoim pokoju. Całkowite zaniechanie zaspokajania podstawowych potrzeb fizjologicznych\ni higienicznych. Obecnie kontakt werbalny jest zniesiony (mutyzm). Przed utratą kontaktu słow-\nnego pacjentka zgłaszała fałszywe, niepoddające się korekcji przekonania o byciu systematycznie\npodsłuchiwaną przez systemy wentylacyjne.\nOBIEKTYWNY STAN KLINICZNY:\nBrak współpracy podczas próby nawiązania kontaktu. Wyraźne usztywnienie postawy ciała i\nmaskowata mimika twarzy (stan zahamowania ruchowego). Badanie neurologiczne i parametry\nżyciowe (RR, HR, saturacja) w normie, co wstępnie wyklucza ostre tło toksykologiczne i soma-\ntyczne. Ewidentne zaburzenia procesów poznawczych oraz interpretacji rzeczywistości (aktywne\nobjawy wytwórcze).\nWNIOSKI I DECYZJE TERAPEUTYCZNE:\n1. Z powodu bezpośredniego zagrożenia życia wynikającego z odmowy przyjmowania pokar-\nmów oraz pogłębionej dezorganizacji, pacjentka wymaga bezwzględnej hospitalizacji w try-\nbie nagłym na oddziale całodobowym o wzmożonym nadzorze (warunki zamknięte).\n2. Konieczność pilnego wdrożenia leczenia celowanego, w tym preparatów modulujących go-\nspodarkę neuroprzekaźnikową (antagoniści receptorów dopaminowych o przedłużonym uwal-\nnianiu).\n3. W przypadku braku reakcji na wdrożoną farmakoterapię i utrzymywania się opornego\nstanu zahamowania (katatonii), wskazana kwalifikacja do zabiegów neuromodulacyjnych z\nużyciem kontrolowanych impulsów elektrycznych."
+  ],
+  "content": "ID Protokołu: [ID_NUMBER]\nWydruk z Systemu Ratownictwa Medycznego\nKARTA INTERWENCJI NAGŁEJ – OCENA STANU\nKLINICZNEGO\nDANE IDENTYFIKACYJNE PACJENTA: ID: [ID_NUMBER] | Kobieta, lat 41\nOKOLICZNOŚCI PRZYJĘCIA: Pacjentka przywieziona przez Zespół Ratownictwa Me-\ndycznego w asyście służb porządkowych na wniosek zaniepokojonej rodziny.\nOPIS ZDARZENIA I WYWIAD:\nWedług relacji osób bliskich od około dwóch tygodni obserwowana jest narastająca dezorgani-\nzacja zachowania. Pacjentka drastycznie ograniczyła przyjmowanie płynów i pokarmów, izoluje\nsię w swoim pokoju. Całkowite zaniechanie zaspokajania podstawowych potrzeb fizjologicznych\ni higienicznych. Obecnie kontakt werbalny jest zniesiony (mutyzm). Przed utratą kontaktu słow-\nnego pacjentka zgłaszała fałszywe, niepoddające się korekcji przekonania o byciu systematycznie\npodsłuchiwaną przez systemy wentylacyjne.\nOBIEKTYWNY STAN KLINICZNY:\nBrak współpracy podczas próby nawiązania kontaktu. Wyraźne usztywnienie postawy ciała i\nmaskowata mimika twarzy (stan zahamowania ruchowego). Badanie neurologiczne i parametry\nżyciowe (RR, HR, saturacja) w normie, co wstępnie wyklucza ostre tło toksykologiczne i soma-\ntyczne. Ewidentne zaburzenia procesów poznawczych oraz interpretacji rzeczywistości (aktywne\nobjawy wytwórcze).\nWNIOSKI I DECYZJE TERAPEUTYCZNE:\n1. Z powodu bezpośredniego zagrożenia życia wynikającego z odmowy przyjmowania pokar-\nmów oraz pogłębionej dezorganizacji, pacjentka wymaga bezwzględnej hospitalizacji w try-\nbie nagłym na oddziale całodobowym o wzmożonym nadzorze (warunki zamknięte).\n2. Konieczność pilnego wdrożenia leczenia celowanego, w tym preparatów modulujących go-\nspodarkę neuroprzekaźnikową (antagoniści receptorów dopaminowych o przedłużonym uwal-\nnianiu).\n3. W przypadku braku reakcji na wdrożoną farmakoterapię i utrzymywania się opornego\nstanu zahamowania (katatonii), wskazana kwalifikacja do zabiegów neuromodulacyjnych z\nużyciem kontrolowanych impulsów elektrycznych.",
+  "language": "pl",
+  "processing_type": "simple",
+  "entities_removed": [
+    {
+      "text": "IP-KRYZ-2026/04/21",
+      "tag": "ID_NUMBER"
+    },
+    {
+      "text": "PAC-404",
+      "tag": "ID_NUMBER"
+    }
+  ],
+  "status": "processed"
+}

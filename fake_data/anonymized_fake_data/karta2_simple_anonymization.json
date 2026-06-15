@@ -1,0 +1,21 @@
+{
+  "session_id": "1",
+  "filename": "karta_2.pdf",
+  "chunks": [
+    "RAPORT KONSULTACJI SPECJALISTYCZNEJ\nData wizyty: [DATE_OF_BIRTH]\nIdentyfikator:\n[ID_NUMBER]\nWiek/Płeć:\n24 lata, Mężczyzna\nTryb przyjęcia:\nAmbulatoryjny, planowy\nWywiad (S):\nPacjent wysoce aktywny fizycznie zgłasza się po nagłym urazie skrętno-zmiażdżeniowym dolnego\naparatu ruchu, do którego doszło 3 tygodnie temu podczas gwałtownego hamowania na murawie.\nZgłasza nasilone dolegliwości bólowe, powtarzające się uczucie \"uciekania\"kończyny pod obciąże-\nniem oraz epizody mechanicznego blokowania pełnego zakresu wyprostu. W wywiadzie masywny\nwysięk w pierwszych dobach po incydencie.\nBadanie fizykalne i diagnostyka (O):\nManualnie stwierdzono wyraźną niestabilność w płaszczyźnie strzałkowej (nadmierne przesu-\nnięcie przednie) oraz dodatnie objawy kompresyjne. Dostarczona dokumentacja z obrazowania\npolem magnetycznym (MRI) potwierdza całkowite przerwanie ciągłości głównej taśmy więzadło-\nwej wewnątrz torebki. Dodatkowo uwidoczniono podłużne pęknięcie rogu tylnego wewnętrznej\nstruktury włóknisto-chrzęstnej (amortyzatora stawowego) oraz stłuczenia tkanki kostnej (bone\nbruise).\nZalecenia i plan (P):\nZ uwagi na zapotrzebowanie biomechaniczne pacjenta i ryzyko przedwczesnych zmian degenera-\ncyjnych, zalecono interwencję naprawczą. Kwalifikacja do małoinwazyjnego wziernikowania wnę-\ntrza przestrzeni stawowej z użyciem toru wizyjnego. Planowane operacyjne odtworzenie przerwa-\nnej struktury stabilizującej z wykorzystaniem autologicznego przeszczepu ścięgnistego oraz próba\nnaprawy pękniętej struktury amortyzującej dedykowanym systemem szwów. Wydano skierowanie\nna blok operacyjny."
+  ],
+  "content": "RAPORT KONSULTACJI SPECJALISTYCZNEJ\nData wizyty: [DATE_OF_BIRTH]\nIdentyfikator:\n[ID_NUMBER]\nWiek/Płeć:\n24 lata, Mężczyzna\nTryb przyjęcia:\nAmbulatoryjny, planowy\nWywiad (S):\nPacjent wysoce aktywny fizycznie zgłasza się po nagłym urazie skrętno-zmiażdżeniowym dolnego\naparatu ruchu, do którego doszło 3 tygodnie temu podczas gwałtownego hamowania na murawie.\nZgłasza nasilone dolegliwości bólowe, powtarzające się uczucie \"uciekania\"kończyny pod obciąże-\nniem oraz epizody mechanicznego blokowania pełnego zakresu wyprostu. W wywiadzie masywny\nwysięk w pierwszych dobach po incydencie.\nBadanie fizykalne i diagnostyka (O):\nManualnie stwierdzono wyraźną niestabilność w płaszczyźnie strzałkowej (nadmierne przesu-\nnięcie przednie) oraz dodatnie objawy kompresyjne. Dostarczona dokumentacja z obrazowania\npolem magnetycznym (MRI) potwierdza całkowite przerwanie ciągłości głównej taśmy więzadło-\nwej wewnątrz torebki. Dodatkowo uwidoczniono podłużne pęknięcie rogu tylnego wewnętrznej\nstruktury włóknisto-chrzęstnej (amortyzatora stawowego) oraz stłuczenia tkanki kostnej (bone\nbruise).\nZalecenia i plan (P):\nZ uwagi na zapotrzebowanie biomechaniczne pacjenta i ryzyko przedwczesnych zmian degenera-\ncyjnych, zalecono interwencję naprawczą. Kwalifikacja do małoinwazyjnego wziernikowania wnę-\ntrza przestrzeni stawowej z użyciem toru wizyjnego. Planowane operacyjne odtworzenie przerwa-\nnej struktury stabilizującej z wykorzystaniem autologicznego przeszczepu ścięgnistego oraz próba\nnaprawy pękniętej struktury amortyzującej dedykowanym systemem szwów. Wydano skierowanie\nna blok operacyjny.",
+  "language": "pl",
+  "processing_type": "simple",
+  "entities_removed": [
+    {
+      "text": "21.04.2026",
+      "tag": "DATE_OF_BIRTH"
+    },
+    {
+      "text": "PAC-088",
+      "tag": "ID_NUMBER"
+    }
+  ],
+  "status": "processed"
+}

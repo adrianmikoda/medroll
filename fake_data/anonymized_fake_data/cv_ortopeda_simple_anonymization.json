@@ -1,0 +1,53 @@
+{
+  "session_id": "1",
+  "filename": "cv_ortopeda.pdf",
+  "chunks": [
+    "[SURNAME], lek. med.\nEkspert Traumatologii Narządu Ruchu · [CITY], [COUNTRY_CODE] · [EMAIL] · [PHONE_NUMBER]\nKLUCZOWE\nKOMPETEN-\nCJE\nInwazyjna rekonstrukcja dużych struk-\ntur stawowych.\nStabilizacja\ndynamiczna\ni\nstatyczna\nodłamów.\nTechniki wziernikowania toru wizyjnego\n(Video-oscopy).\nInżynieria biomateriałowa w endoprote-\nzoplastyce.\nMedycyna naprawcza tkanki łącznej i\nchrzęstnej.\nEDUKACJA\n[UNIVERSITY_NAME]\nWydział Lekarski\n[DATE_OF_BIRTH]\nJęZYKI\nPolski - Ojczysty\nAngielski - C1 (Medical)\nNiemiecki - B2\nPROFIL EKSPERCKI\nOperator nastawiony na biomechaniczną sprawność pacjenta. Specjalizuje\nsię w usuwaniu dysfunkcji mechanicznych powstałych w wyniku gwałtow-\nnych przeciążeń oraz procesów degeneracyjnych tkanki twardej. Wykorzy-\nstuje zaawansowane stopy metali i polimery w rekonstrukcjach ubytków\nstrukturalnych.\nŚCIEˆSKA KLINICZNA\n[CENTER_NAME]\nGłówny Operator / Konsultant\n[DATE_OF_BIRTH]\n• Przywracanie ciągłości mechanicznej zerwanych taśm stabilizujących\n(ACL/MCL).\n• Wykonywanie pełnych rekonstrukcji powierzchni ślizgowych za pomocą\nimplantów metalicznych.\n• Nadzór nad procesem zrostu kostnego u pacjentów po wypadkach ko-\nmunikacyjnych.\n[INSTITUTION_NAME]\nStarszy Rezydent Traumatologii\n2014 – 2018\n• Prowadzenie ostrych dyżurów w zakresie stabilizacji otwartych prze-\nrwań ciągłości aparatu wspierającego.\n• Stosowanie gwoździ śródszpikowych oraz systemów ryglowanych w ze-\nspoleniach wieloodłamowych.\n• Opracowywanie procedur wczesnej mobilizacji pacjentów po zabiegach\ninwazyjnych.\nPUBLIKACJE I ROZWÓJ\n\"Nowoczesne stopy tytanu w naprawie szyjki udowej\" – analiza 150 przy-\npadków klinicznych.\nKurs AO-Trauma – Zaawansowane techniki osteosyntezy (Szwajcaria)."
+  ],
+  "content": "[SURNAME], lek. med.\nEkspert Traumatologii Narządu Ruchu · [CITY], [COUNTRY_CODE] · [EMAIL] · [PHONE_NUMBER]\nKLUCZOWE\nKOMPETEN-\nCJE\nInwazyjna rekonstrukcja dużych struk-\ntur stawowych.\nStabilizacja\ndynamiczna\ni\nstatyczna\nodłamów.\nTechniki wziernikowania toru wizyjnego\n(Video-oscopy).\nInżynieria biomateriałowa w endoprote-\nzoplastyce.\nMedycyna naprawcza tkanki łącznej i\nchrzęstnej.\nEDUKACJA\n[UNIVERSITY_NAME]\nWydział Lekarski\n[DATE_OF_BIRTH]\nJęZYKI\nPolski - Ojczysty\nAngielski - C1 (Medical)\nNiemiecki - B2\nPROFIL EKSPERCKI\nOperator nastawiony na biomechaniczną sprawność pacjenta. Specjalizuje\nsię w usuwaniu dysfunkcji mechanicznych powstałych w wyniku gwałtow-\nnych przeciążeń oraz procesów degeneracyjnych tkanki twardej. Wykorzy-\nstuje zaawansowane stopy metali i polimery w rekonstrukcjach ubytków\nstrukturalnych.\nŚCIEˆSKA KLINICZNA\n[CENTER_NAME]\nGłówny Operator / Konsultant\n[DATE_OF_BIRTH]\n• Przywracanie ciągłości mechanicznej zerwanych taśm stabilizujących\n(ACL/MCL).\n• Wykonywanie pełnych rekonstrukcji powierzchni ślizgowych za pomocą\nimplantów metalicznych.\n• Nadzór nad procesem zrostu kostnego u pacjentów po wypadkach ko-\nmunikacyjnych.\n[INSTITUTION_NAME]\nStarszy Rezydent Traumatologii\n2014 – 2018\n• Prowadzenie ostrych dyżurów w zakresie stabilizacji otwartych prze-\nrwań ciągłości aparatu wspierającego.\n• Stosowanie gwoździ śródszpikowych oraz systemów ryglowanych w ze-\nspoleniach wieloodłamowych.\n• Opracowywanie procedur wczesnej mobilizacji pacjentów po zabiegach\ninwazyjnych.\nPUBLIKACJE I ROZWÓJ\n\"Nowoczesne stopy tytanu w naprawie szyjki udowej\" – analiza 150 przy-\npadków klinicznych.\nKurs AO-Trauma – Zaawansowane techniki osteosyntezy (Szwajcaria).",
+  "language": "pl",
+  "processing_type": "simple",
+  "entities_removed": [
+    {
+      "text": "Centrum Urazowe Medycyny Sportowej",
+      "tag": "CENTER_NAME"
+    },
+    {
+      "text": "Wojewódzki Oddział Ratunkowy",
+      "tag": "INSTITUTION_NAME"
+    },
+    {
+      "text": "m.nowak@med-klinika.pl",
+      "tag": "EMAIL"
+    },
+    {
+      "text": "Uniwersytet Medyczny",
+      "tag": "UNIVERSITY_NAME"
+    },
+    {
+      "text": "Poznań, 2007 – 2013",
+      "tag": "DATE_OF_BIRTH"
+    },
+    {
+      "text": "+48 600 700 800",
+      "tag": "PHONE_NUMBER"
+    },
+    {
+      "text": "2019 – obecnie",
+      "tag": "DATE_OF_BIRTH"
+    },
+    {
+      "text": "Marek Nowak",
+      "tag": "SURNAME"
+    },
+    {
+      "text": "Poznań",
+      "tag": "CITY"
+    },
+    {
+      "text": "PL",
+      "tag": "COUNTRY_CODE"
+    }
+  ],
+  "status": "processed"
+}

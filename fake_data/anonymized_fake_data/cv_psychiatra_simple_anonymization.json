@@ -1,0 +1,41 @@
+{
+  "session_id": "1",
+  "filename": "cv_psychiatra.pdf",
+  "chunks": [
+    "[SURNAME]\nSpecjalista Neurofarmakologii i Zaburzeń Behawioralnych\n[CITY] • [PHONE_NUMBER] • [EMAIL]\nPROFIL EKSPERCKI: Lekarz praktyk koncentrujący się na biochemicznych podłożach dysfunkcji po-\nznawczych i emocjonalnych. Ekspert w zakresie optymalizacji transmisji neurotransmiterów oraz interwencji\nw stanach nagłego załamania homeostazy behawioralnej. Posiada unikalne kompetencje w łączeniu medycyny\nklinicznej z nowoczesnymi technikami stymulacji ośrodkowego układu nerwowego.\nObszary Interwencji Klinicznej\nFarmakoterapia celowana\nInterwencje neurofizjologiczne\n• Regulacja osi dopaminergicznej i serotoniner-\ngicznej.\n• Prowadzenie protokołów lekoopornych w sta-\nnach afektywnych.\n• Kwalifikacja do procedur EW (indukowanie\nkontrolowanych wyładowań).\n• Monitoring procesów neuroplastyczności.\nPrzebieg Praktyki Klinicznej\n[INSTITUTION_NAME] (Oddział Całodobowy)\n2019 – obecnie\nStarszy Koordynator Medyczny\nZarządzanie procesami diagnostycznymi u pacjentów wymagających izolacji i wzmożonego nadzoru z powodu braku\nkrytycyzmu co do własnego stanu zdrowia. Nadzór nad farmakologicznym wyciszaniem ostrych incydentów uroje-\nniowych oraz regeneracją funkcji kognitywnych. Odpowiedzialność za bezpieczeństwo farmakologiczne w złożonych\nterapiach wielolekowych.\n[INSTITUTION_NAME]\n2013 – 2019\nLekarz Konsultujący\nProwadzenie pacjentów z zaburzeniami w sferze napędu, lęku oraz cyklicznych wahań nastroju. Analiza wpływów\nczynników endogennych na codzienne funkcjonowanie społeczne. Prowadzenie interwencji w sytuacjach kryzysu egzy-\nstencjalnego z towarzyszącymi myślami o rezygnacji.\nEdukacja i Rozwój\n◦[UNIVERSITY_NAME] – Dyplom Lekarza (2012).\n◦Certyfikat: Advanced Neuropharmacology – Nowoczesne podejście do antagonistów receptorów D2 i 5-HT2A.\n◦Szkolenie: Deeskalacja Przymusu – Techniki opanowywania ostrej agresji w warunkach klinicznych."
+  ],
+  "content": "[SURNAME]\nSpecjalista Neurofarmakologii i Zaburzeń Behawioralnych\n[CITY] • [PHONE_NUMBER] • [EMAIL]\nPROFIL EKSPERCKI: Lekarz praktyk koncentrujący się na biochemicznych podłożach dysfunkcji po-\nznawczych i emocjonalnych. Ekspert w zakresie optymalizacji transmisji neurotransmiterów oraz interwencji\nw stanach nagłego załamania homeostazy behawioralnej. Posiada unikalne kompetencje w łączeniu medycyny\nklinicznej z nowoczesnymi technikami stymulacji ośrodkowego układu nerwowego.\nObszary Interwencji Klinicznej\nFarmakoterapia celowana\nInterwencje neurofizjologiczne\n• Regulacja osi dopaminergicznej i serotoniner-\ngicznej.\n• Prowadzenie protokołów lekoopornych w sta-\nnach afektywnych.\n• Kwalifikacja do procedur EW (indukowanie\nkontrolowanych wyładowań).\n• Monitoring procesów neuroplastyczności.\nPrzebieg Praktyki Klinicznej\n[INSTITUTION_NAME] (Oddział Całodobowy)\n2019 – obecnie\nStarszy Koordynator Medyczny\nZarządzanie procesami diagnostycznymi u pacjentów wymagających izolacji i wzmożonego nadzoru z powodu braku\nkrytycyzmu co do własnego stanu zdrowia. Nadzór nad farmakologicznym wyciszaniem ostrych incydentów uroje-\nniowych oraz regeneracją funkcji kognitywnych. Odpowiedzialność za bezpieczeństwo farmakologiczne w złożonych\nterapiach wielolekowych.\n[INSTITUTION_NAME]\n2013 – 2019\nLekarz Konsultujący\nProwadzenie pacjentów z zaburzeniami w sferze napędu, lęku oraz cyklicznych wahań nastroju. Analiza wpływów\nczynników endogennych na codzienne funkcjonowanie społeczne. Prowadzenie interwencji w sytuacjach kryzysu egzy-\nstencjalnego z towarzyszącymi myślami o rezygnacji.\nEdukacja i Rozwój\n◦[UNIVERSITY_NAME] – Dyplom Lekarza (2012).\n◦Certyfikat: Advanced Neuropharmacology – Nowoczesne podejście do antagonistów receptorów D2 i 5-HT2A.\n◦Szkolenie: Deeskalacja Przymusu – Techniki opanowywania ostrej agresji w warunkach klinicznych.",
+  "language": "pl",
+  "processing_type": "simple",
+  "entities_removed": [
+    {
+      "text": "Instytut Zdrowia Neuro-Behawioralnego",
+      "tag": "INSTITUTION_NAME"
+    },
+    {
+      "text": "Poradnia Modulacji Nastroju i Snu",
+      "tag": "INSTITUTION_NAME"
+    },
+    {
+      "text": "Warszawski Uniwersytet Medyczny",
+      "tag": "UNIVERSITY_NAME"
+    },
+    {
+      "text": "awisniewska@neuro-med.pl",
+      "tag": "EMAIL"
+    },
+    {
+      "text": "Anna Wiśniewska",
+      "tag": "SURNAME"
+    },
+    {
+      "text": "+48 999 888 777",
+      "tag": "PHONE_NUMBER"
+    },
+    {
+      "text": "Warszawa",
+      "tag": "CITY"
+    }
+  ],
+  "status": "processed"
+}
