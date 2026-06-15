@@ -2,13 +2,18 @@
 pymupdf
 python-docx
 pydantic
-langdetect
 
-# api 
+# api
 fastapi
 uvicorn
 python-multipart
 
 # advanced file converter
 docling
-pydantic-settings
+
+# llm
+torch
+transformers
+accelerate
+bitsandbytes
+hf_transfer

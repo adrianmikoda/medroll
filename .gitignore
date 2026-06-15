@@ -214,3 +214,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# important private files to anonymization files by athena
+.job-secrets
+run_medroll_api.sh
