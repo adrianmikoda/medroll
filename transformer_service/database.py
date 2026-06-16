@@ -81,7 +81,7 @@ class Database:
     def add(
         self,
         physician_id: str,
-        data: str,
+        content: str,
         filename: str,
         name: str = "",
         capacity: int = 5,
@@ -90,8 +90,8 @@ class Database:
         row = {
             "physician_id": physician_id,
             "filename": filename,
-            "text": data,
-            "vector": self.encode_physician_text(data),
+            "text": content,
+            "vector": self.encode_physician_text(content),
             "name": name or physician_id,
             "capacity": capacity,
             "language": language,
@@ -105,21 +105,11 @@ class Database:
             print(f"[WARN] Error fetching records from LanceDB: {e}")
             return []
 
-    def add_file(self, physician_id: str, file_path: str, session_id: str = "1") -> dict[str, Any]:
-        data = json.loads(FileConverter(file_path, session_id).convert_to_json())
-        self.add_json(physician_id=physician_id, data=data)
-        
-        return data
-    
-    def add_json(self, physician_id, data: dict[str, Any]) -> None:
-        if data.get("status") == "error":
-            raise ValueError(data["message"])
-
-        self.add(
-            physician_id=physician_id,
-            data=data["content"],
-            filename=data["filename"],
-        )
+    def delete(self, physician_id: str) -> None:
+        try:
+            self.tbl.delete(f"physician_id = '{physician_id}'")
+        except Exception as e:
+            print(f"[WARN] Error deleting record from LanceDB: {e}")
 
     def search(self, query: str, n: int = 5) -> list[dict[str, Any]]:
         query_vector = self.encode_patient_query(query)
@@ -132,17 +122,3 @@ class Database:
         )
 
         return results_df.to_dict(orient="records")
-
-    def search_file(
-        self,
-        file_path: str,
-        session_id: str = "1",
-        n: int = 5,
-    ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-        data = json.loads(FileConverter(file_path, session_id).convert_to_json())
-
-        if data.get("status") == "error":
-            raise ValueError(data["message"])
-
-        rows = self.search(query=data["content"], n=n)
-        return data, rows

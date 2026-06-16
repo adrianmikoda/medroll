@@ -69,6 +69,7 @@ class AppState:
             self.load_physicians_from_db()
             self.load_patients_from_cache()
             self.sync_physician_loads_from_patients()
+            
         except Exception as e:
             print(f"[WARN] Could not initialize model/DB: {e}")
             self.db_ready = False
@@ -99,7 +100,6 @@ class AppState:
                     "capacity": capacity,
                     "current_load": 0,
                     "filename": r.get("filename") or "",
-                    "content_preview": (r.get("text") or "")[:300],
                     "language": r.get("language") or "?",
                 }
             print(f"[INFO] Loaded {len(self.physicians)} physicians from database cache.")
@@ -127,7 +127,6 @@ class AppState:
                 self.patients[patient_id] = {
                     "patient_id": patient_id,
                     "filename": record.get("filename") or "",
-                    "content_preview": record.get("content_preview") or (record.get("content") or "")[:300],
                     "content": record.get("content") or "",
                     "language": record.get("language") or "?",
                     "assigned_physician_id": record.get("assigned_physician_id"),
@@ -251,7 +250,7 @@ async def add_physician(
             try:
                 state.database.add(
                     physician_id=physician_id,
-                    data=result["content"],
+                    content=result["content"],
                     filename=result["filename"],
                     name=name or physician_id,
                     capacity=capacity,
@@ -266,7 +265,6 @@ async def add_physician(
             "capacity": capacity,
             "current_load": 0,
             "filename": result["filename"],
-            "content_preview": result["content"][:300],
             "language": result.get("language", "?"),
         }
 
@@ -288,6 +286,11 @@ def delete_physician(physician_id: str):
     if physician_id not in state.physicians:
         raise HTTPException(404, f"Physician '{physician_id}' not found")
     del state.physicians[physician_id]
+    if state.database is not None:
+        try:
+            state.database.delete(physician_id)
+        except Exception as e:
+            print(f"[WARN] Failed to delete physician '{physician_id}' from DB: {e}")
     return {"status": "ok", "deleted": physician_id}
 
 
@@ -314,7 +317,6 @@ async def add_patient(
         state.patients[patient_id] = {
             "patient_id": patient_id,
             "filename": result["filename"],
-            "content_preview": result["content"][:300],
             "content": result["content"],
             "language": result.get("language", "?"),
             "assigned_physician_id": None,
@@ -361,7 +363,6 @@ def _make_patient_record(
     return {
         "patient_id": patient_id,
         "filename": filename,
-        "content_preview": content[:300],
         "content": content,
         "language": language,
         "assigned_physician_id": assigned_physician_id,
@@ -624,82 +625,171 @@ def update_config(cfg: ConfigModel):
 
 @app.post("/api/demo/load")
 def load_demo_data():
-    """Load fake_data physicians and patients for quick testing."""
-    physician_files = [
-        {"physician_id": "doc_cardio", "filename": "cv_kardiochirurg.pdf", "capacity": 3, "name": "Kardiochirurg"},
-        {"physician_id": "doc_ortho", "filename": "cv_ortopeda.pdf", "capacity": 3, "name": "Ortopeda"},
-        {"physician_id": "doc_psych", "filename": "cv_psychiatra.pdf", "capacity": 3, "name": "Psychiatra"},
-    ]
-    patient_files = [
-        {"patient_id": "pat_1", "filename": "karta_1.pdf"},
-        {"patient_id": "pat_2", "filename": "karta_2.pdf"},
-        {"patient_id": "pat_3", "filename": "karta_3.pdf"},
-    ]
+    """Load data physicians and patients for quick testing."""
+    physicians_dir = "./data/physicians"
+    patients_dir = "./data/patients"
 
     loaded_physicians = []
     loaded_patients = []
 
-    for doc in physician_files:
-        path = f"./fake_data/cvs/{doc['filename']}"
-        if not os.path.exists(path):
-            continue
+    if os.path.exists(physicians_dir):
+        files = sorted([f for f in os.listdir(physicians_dir) if f.lower().endswith((".pdf", ".docx"))])
+        for idx, filename in enumerate(files):
+            path = os.path.join(physicians_dir, filename)
+            physician_id = f"doc_{idx + 1}"
+            name = os.path.splitext(filename)[0].replace("cv", "").replace("_", " ")
+            capacity = 3
 
-        try:
-            converter = FileConverter(path, session_id="demo")
-            result = json.loads(converter.convert_to_json())
-            if result.get("status") == "error":
-                continue
+            try:
+                converter = FileConverter(path, session_id="demo")
+                result = json.loads(converter.convert_to_json())
+                if result.get("status") == "error":
+                    continue
 
-            if state.database is not None:
-                try:
-                    state.database.add(
-                        physician_id=doc["physician_id"],
-                        data=result["content"],
-                        filename=result["filename"],
-                        name=doc["name"],
-                        capacity=doc["capacity"],
-                        language=result.get("language", "?"),
-                    )
-                except Exception:
-                    pass
+                if state.database is not None:
+                    try:
+                        state.database.add(
+                            physician_id=physician_id,
+                            content=result["content"],
+                            filename=result["filename"],
+                            name=name,
+                            capacity=capacity,
+                            language=result.get("language", "?"),
+                        )
+                    except Exception:
+                        pass
 
-            state.physicians[doc["physician_id"]] = {
-                "physician_id": doc["physician_id"],
-                "name": doc["name"],
-                "capacity": doc["capacity"],
-                "current_load": 0,
-                "filename": result["filename"],
-                "content_preview": result["content"][:300],
-                "language": result.get("language", "?"),
-            }
-            loaded_physicians.append(doc["physician_id"])
-        except Exception:
-            traceback.print_exc()
+                state.physicians[physician_id] = {
+                    "physician_id": physician_id,
+                    "name": name,
+                    "capacity": capacity,
+                    "current_load": 0,
+                    "filename": result["filename"],
+                    "language": result.get("language", "?"),
+                }
+                loaded_physicians.append(physician_id)
+            except Exception:
+                traceback.print_exc()
 
-    for pat in patient_files:
-        path = f"./fake_data/medical_records/{pat['filename']}"
-        if not os.path.exists(path):
-            continue
+    # Load all patients from `./data/patients`
+    if os.path.exists(patients_dir):
+        files = sorted([f for f in os.listdir(patients_dir) if f.lower().endswith((".pdf", ".docx"))])
+        for idx, filename in enumerate(files):
+            path = os.path.join(patients_dir, filename)
+            patient_id = f"pat_{idx + 1}"
 
-        try:
-            converter = FileConverter(path, session_id="demo")
-            result = json.loads(converter.convert_to_json())
-            if result.get("status") == "error":
-                continue
+            try:
+                converter = FileConverter(path, session_id="demo")
+                result = json.loads(converter.convert_to_json())
+                if result.get("status") == "error":
+                    continue
 
-            state.patients[pat["patient_id"]] = {
-                "patient_id": pat["patient_id"],
-                "filename": result["filename"],
-                "content_preview": result["content"][:300],
-                "content": result["content"],
-                "language": result.get("language", "?"),
-                "assigned_physician_id": None,
-                "assigned_slot_index": None,
-                "candidates": [],
-            }
-            loaded_patients.append(pat["patient_id"])
-        except Exception:
-            traceback.print_exc()
+                state.patients[patient_id] = {
+                    "patient_id": patient_id,
+                    "filename": result["filename"],
+                    "content": result["content"],
+                    "language": result.get("language", "?"),
+                    "assigned_physician_id": None,
+                    "assigned_slot_index": None,
+                    "candidates": [],
+                }
+                loaded_patients.append(patient_id)
+            except Exception:
+                traceback.print_exc()
+
+    state.save_patients_to_cache()
+    state.sync_physician_loads_from_patients()
+
+    return {
+        "status": "ok",
+        "loaded_physicians": loaded_physicians,
+        "loaded_patients": loaded_patients,
+    }
+
+
+@app.post("/api/demo/load_anonymized")
+def load_anonymized_demo_data():
+    """Load anonymized physicians and patients for testing."""
+    physicians_dir = "./data/physicians_anonymized"
+    patients_dir = "./data/patients_anonymized"
+
+    loaded_physicians = []
+    loaded_patients = []
+
+    # Load all physicians from `./data/physicians_anonymized`
+    if os.path.exists(physicians_dir):
+        files = sorted([f for f in os.listdir(physicians_dir) if f.lower().endswith(".json")])
+        for idx, filename in enumerate(files):
+            path = os.path.join(physicians_dir, filename)
+            physician_id = f"phys_anonimized_{idx + 1}"
+            capacity = 3
+
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                
+                orig_filename = data.get("filename") or filename
+                name = os.path.splitext(orig_filename)[0].replace("cv", "").replace("_", " ")
+                content = data.get("content", "")
+                language = data.get("language", "?")
+
+                if not content:
+                    continue
+
+                if state.database is not None:
+                    try:
+                        state.database.add(
+                            physician_id=physician_id,
+                            content=content,
+                            filename=filename,
+                            name=name,
+                            capacity=capacity,
+                            language=language,
+                        )
+                    except Exception:
+                        pass
+
+                state.physicians[physician_id] = {
+                    "physician_id": physician_id,
+                    "name": name,
+                    "capacity": capacity,
+                    "current_load": 0,
+                    "filename": filename,
+                    "language": language,
+                }
+                loaded_physicians.append(physician_id)
+            except Exception:
+                traceback.print_exc()
+
+    # Load all patients from `./data/patients_anonymized`
+    if os.path.exists(patients_dir):
+        files = sorted([f for f in os.listdir(patients_dir) if f.lower().endswith(".json")])
+        for idx, filename in enumerate(files):
+            path = os.path.join(patients_dir, filename)
+            patient_id = f"pat_anonimized_{idx + 1}"
+
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+
+                content = data.get("content", "")
+                language = data.get("language", "?")
+
+                if not content:
+                    continue
+
+                state.patients[patient_id] = {
+                    "patient_id": patient_id,
+                    "filename": filename,
+                    "content": content,
+                    "language": language,
+                    "assigned_physician_id": None,
+                    "assigned_slot_index": None,
+                    "candidates": [],
+                }
+                loaded_patients.append(patient_id)
+            except Exception:
+                traceback.print_exc()
 
     state.save_patients_to_cache()
     state.sync_physician_loads_from_patients()
@@ -714,8 +804,6 @@ def load_demo_data():
 @app.on_event("startup")
 async def startup():
     state.try_init_database()
-    state.load_patients_from_cache()
-    state.sync_physician_loads_from_patients()
 
 
 app.mount("/static", StaticFiles(directory="frontend"), name="static")

@@ -330,6 +330,7 @@ body {
     border-collapse: collapse;
     font-size: 0.78rem;
     margin-top: 8px;
+    white-space: normal;
 }
 
 .cli-table th {

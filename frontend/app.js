@@ -134,6 +134,27 @@ $('btnLoadDemo').addEventListener('click', async () => {
     }
 });
 
+// ── Load Anonymized Demo ────────────────────────────────────
+$('btnLoadAnonymizedDemo').addEventListener('click', async () => {
+    const btn = $('btnLoadAnonymizedDemo');
+    btn.disabled = true;
+    setLoading('anonymizedDemoOutput', 'Loading anonymized demo data');
+
+    try {
+        const data = await api('POST', '/api/demo/load_anonymized');
+        let out = `<span class="msg-ok">Anonymized demo data loaded successfully.</span>\n\n`;
+        out += `  physicians loaded:  ${data.loaded_physicians.join(', ') || 'none'}\n`;
+        out += `  patients loaded: ${data.loaded_patients.join(', ') || 'none'}`;
+        setOutput('anonymizedDemoOutput', out);
+        refreshDashboard();
+    } catch (e) {
+        setOutput('anonymizedDemoOutput', `<span class="msg-err">ERROR: ${escHtml(e.message)}</span>`);
+    } finally {
+        btn.disabled = false;
+    }
+});
+
+
 // ── Physicians ──────────────────────────────────────────────
 $('formAddPhysician').addEventListener('submit', async e => {
     e.preventDefault();
@@ -167,21 +188,10 @@ async function refreshPhysicians() {
             return;
         }
 
-        let html = `<table class="cli-table">
-<thead><tr>
-    <th>ID</th><th>NAME</th><th>CAPACITY</th><th>LOAD</th><th>FILE</th><th>LANG</th><th></th>
-</tr></thead><tbody>`;
+        let html = '<table class="cli-table"><thead><tr><th>ID</th><th>NAME</th><th>CAPACITY</th><th>LOAD</th><th>FILE</th><th>LANG</th><th></th></tr></thead><tbody>';
 
         for (const d of physicians) {
-            html += `<tr>
-    <td>${escHtml(d.physician_id)}</td>
-    <td>${escHtml(d.name)}</td>
-    <td>${d.capacity}</td>
-    <td>${d.current_load}</td>
-    <td>${escHtml(d.filename)}</td>
-    <td>${escHtml(d.language)}</td>
-    <td><button class="cmd-btn cmd-btn-danger" onclick="deletePhysician('${escHtml(d.physician_id)}')">DEL</button></td>
-</tr>`;
+            html += `<tr><td>${escHtml(d.physician_id)}</td><td>${escHtml(d.name)}</td><td>${d.capacity}</td><td>${d.current_load}</td><td>${escHtml(d.filename)}</td><td>${escHtml(d.language)}</td><td><button class="cmd-btn cmd-btn-danger" onclick="deletePhysician('${escHtml(d.physician_id)}')">DEL</button></td></tr>`;
         }
 
         html += '</tbody></table>';
@@ -232,20 +242,12 @@ async function refreshPatients() {
             return;
         }
 
-        let html = `<table class="cli-table">
-<thead><tr>
-    <th>ID</th><th>FILE</th><th>LANG</th><th>CANDIDATES</th><th></th>
-</tr></thead><tbody>`;
+        let html = '<table class="cli-table"><thead><tr><th>ID</th><th>FILE</th><th>LANG</th><th>CANDIDATES</th><th></th></tr></thead><tbody>';
 
         for (const p of pats) {
             const candCount = (p.candidates || []).length;
-            html += `<tr>
-    <td>${escHtml(p.patient_id)}</td>
-    <td>${escHtml(p.filename)}</td>
-    <td>${escHtml(p.language)}</td>
-    <td>${candCount > 0 ? `<span class="msg-ok">${candCount}</span>` : '<span class="dim">0</span>'}</td>
-    <td><button class="cmd-btn cmd-btn-danger" onclick="deletePatient('${escHtml(p.patient_id)}')">DEL</button></td>
-</tr>`;
+            const candHtml = candCount > 0 ? `<span class="msg-ok">${candCount}</span>` : '<span class="dim">0</span>';
+            html += `<tr><td>${escHtml(p.patient_id)}</td><td>${escHtml(p.filename)}</td><td>${escHtml(p.language)}</td><td>${candHtml}</td><td><button class="cmd-btn cmd-btn-danger" onclick="deletePatient('${escHtml(p.patient_id)}')">DEL</button></td></tr>`;
         }
 
         html += '</tbody></table>';
@@ -320,10 +322,10 @@ $('btnSearchAll').addEventListener('click', async () => {
         for (const p of patients.patients) {
             try {
                 const data = await api('POST', '/api/search', { patient_id: p.patient_id, n });
-                allHtml += `<div style="margin-bottom:12px">`;
-                allHtml += `<span class="hl">── ${escHtml(p.patient_id)} ──</span>\n`;
+                allHtml += '<div style="margin-bottom:12px">';
+                allHtml += `<span class="hl">── ${escHtml(p.patient_id)} ──</span><br>`;
                 allHtml += renderSearchResultsHtml(data);
-                allHtml += `</div>`;
+                allHtml += '</div>';
             } catch (e) {
                 allHtml += `<span class="msg-err">${escHtml(p.patient_id)}: ${escHtml(e.message)}</span>\n`;
             }
@@ -344,17 +346,11 @@ function renderSearchResultsHtml(data) {
         return '<span class="dim">No results found.</span>';
     }
 
-    let html = `<table class="cli-table">
-<thead><tr><th>#</th><th>PHYSICIAN_ID</th><th>FILE</th><th>DISTANCE</th><th>SCORE</th></tr></thead><tbody>`;
+    let html = '<table class="cli-table"><thead><tr><th>#</th><th>PHYSICIAN_ID</th><th>FILE</th><th>DISTANCE</th><th>SCORE</th></tr></thead><tbody>';
 
     data.results.forEach((r, i) => {
-        html += `<tr>
-    <td>${i + 1}</td>
-    <td>${escHtml(r.physician_id)}</td>
-    <td>${escHtml(r.filename || '?')}</td>
-    <td>${r.distance !== null ? r.distance.toFixed(4) : '?'}</td>
-    <td>${scoreBar(r.score)}</td>
-</tr>`;
+        const dist = r.distance !== null ? r.distance.toFixed(4) : '?';
+        html += `<tr><td>${i + 1}</td><td>${escHtml(r.physician_id)}</td><td>${escHtml(r.filename || '?')}</td><td>${dist}</td><td>${scoreBar(r.score)}</td></tr>`;
     });
 
     html += '</tbody></table>';
