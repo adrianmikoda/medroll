@@ -9,7 +9,7 @@ from .models import MedicalDocument, NerEntity
 class FileConverter:
     SUPPORTED_EXTENSIONS = {".pdf", ".docx"}
 
-    def __init__(self, file_path: str, session_id: str, processor):
+    def __init__(self, file_path: str, session_id: str, processor=None):
         self.file_path = file_path
         self.session_id = session_id
         self.processor = processor
@@ -20,7 +20,62 @@ class FileConverter:
         }
         self.advanced_extractor = DoclingExtractor()
 
+    def detect_language(self, text: str) -> tuple[bool, str]:
+        from langdetect import detect_langs
+        try:
+            predictions = detect_langs(text)  # [lang:confidence score]
+            top_lang = predictions[0]
+
+            if top_lang.lang not in ["pl", "de", "en"]:
+                return False, f"The language {top_lang.lang} is not supported"
+
+            if top_lang.prob < 0.8:
+                return (
+                    False,
+                    "Validation Error: Multiple Languages detected. Only single-language documents are supported",
+                )
+
+            return True, top_lang.lang
+        except Exception:
+            return False, "Could not recognize the language"
+
+    def convert_to_json(self) -> str:
+        try:
+            extractor = self.simple_extractors.get(self.extension)
+            if not extractor:
+                raise ValueError(f"Unsupported format: {self.extension}")
+
+            raw_text = extractor.extract(self.file_path)
+            if not raw_text.strip():
+                raise ValueError("No text extracted from document")
+
+            is_valid_lang, lang_result = self.detect_language(raw_text)
+            if not is_valid_lang:
+                raise ValueError(lang_result)
+
+            doc_obj = MedicalDocument(
+                session_id=self.session_id,
+                filename=os.path.basename(self.file_path),
+                chunks=[raw_text],
+                content=raw_text,
+                language=lang_result,
+                processing_type="simple",
+                entities_removed=[],
+            )
+
+            return doc_obj.model_dump_json(indent=4)
+        except Exception as e:
+            return json.dumps({"status": "error", "message": str(e)}, ensure_ascii=False)
+
     async def convert(self) -> str:
+        if self.processor is None:
+            return json.dumps(
+                {
+                    "status": "error",
+                    "message": "Processor is required for anonymized/advanced conversion.",
+                }
+            )
+
         if self.extension not in self.SUPPORTED_EXTENSIONS:
             return json.dumps(
                 {
