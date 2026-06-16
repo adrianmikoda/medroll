@@ -239,12 +239,26 @@ async def add_physician(
         with open(file_path, "wb") as buf:
             shutil.copyfileobj(file.file, buf)
 
-        converter = FileConverter(file_path, session_id="gui")
-        result_json = converter.convert_to_json()
-        result = json.loads(result_json)
+        if file.filename.lower().endswith(".json"):
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    loaded_data = json.load(f)
+                if "content" not in loaded_data:
+                    raise ValueError("Invalid JSON structure. Key 'content' is required.")
+                result = {
+                    "content": loaded_data["content"],
+                    "filename": file.filename,
+                    "language": loaded_data.get("language") or "?",
+                }
+            except Exception as e:
+                raise HTTPException(400, f"Failed to parse JSON file: {e}")
+        else:
+            converter = FileConverter(file_path, session_id="gui")
+            result_json = converter.convert_to_json()
+            result = json.loads(result_json)
 
-        if result.get("status") == "error":
-            raise HTTPException(400, result.get("message"))
+            if result.get("status") == "error":
+                raise HTTPException(400, result.get("message"))
 
         if state.database is not None:
             try:
@@ -321,12 +335,26 @@ async def add_patient(
         with open(file_path, "wb") as buf:
             shutil.copyfileobj(file.file, buf)
 
-        converter = FileConverter(file_path, session_id="gui")
-        result_json = converter.convert_to_json()
-        result = json.loads(result_json)
+        if file.filename.lower().endswith(".json"):
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    loaded_data = json.load(f)
+                if "content" not in loaded_data:
+                    raise ValueError("Invalid JSON structure. Key 'content' is required.")
+                result = {
+                    "content": loaded_data["content"],
+                    "filename": file.filename,
+                    "language": loaded_data.get("language") or "?",
+                }
+            except Exception as e:
+                raise HTTPException(400, f"Failed to parse JSON file: {e}")
+        else:
+            converter = FileConverter(file_path, session_id="gui")
+            result_json = converter.convert_to_json()
+            result = json.loads(result_json)
 
-        if result.get("status") == "error":
-            raise HTTPException(400, result.get("message"))
+            if result.get("status") == "error":
+                raise HTTPException(400, result.get("message"))
 
         state.patients[patient_id] = {
             "patient_id": patient_id,
@@ -721,29 +749,28 @@ def load_demo_data():
     }
 
 
-@app.post("/api/demo/load_anonymized")
-def load_anonymized_demo_data():
-    """Load anonymized physicians and patients for testing."""
-    physicians_dir = "./data/physicians_anonymized"
-    patients_dir = "./data/patients_anonymized"
+@app.post("/api/demo/load_json")
+def load_json_demo_data():
+    """Load JSON physicians and patients for testing."""
+    physicians_dir = "./data/physicians_json"
+    patients_dir = "./data/patients_json"
 
     loaded_physicians = []
     loaded_patients = []
 
-    # Load all physicians from `./data/physicians_anonymized`
+    # Load all physicians from `./data/physicians_json`
     if os.path.exists(physicians_dir):
         files = sorted([f for f in os.listdir(physicians_dir) if f.lower().endswith(".json")])
         for idx, filename in enumerate(files):
             path = os.path.join(physicians_dir, filename)
-            physician_id = f"phys_anonimized_{idx + 1}"
+            physician_id = f"doc_json_{idx + 1}"
             capacity = 3
 
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 
-                orig_filename = data.get("filename") or filename
-                name = os.path.splitext(orig_filename)[0].replace("cv", "").replace("_", " ")
+                name = os.path.splitext(orig_filename)[0].replace("cv_", "").replace("_simple_anonymization", " ")
                 content = data.get("content", "")
                 language = data.get("language", "?")
 
@@ -775,12 +802,12 @@ def load_anonymized_demo_data():
             except Exception:
                 traceback.print_exc()
 
-    # Load all patients from `./data/patients_anonymized`
+    # Load all patients from `./data/patients_json`
     if os.path.exists(patients_dir):
         files = sorted([f for f in os.listdir(patients_dir) if f.lower().endswith(".json")])
         for idx, filename in enumerate(files):
             path = os.path.join(patients_dir, filename)
-            patient_id = f"pat_anonimized_{idx + 1}"
+            patient_id = f"pat_json_{idx + 1}"
 
             try:
                 with open(path, "r", encoding="utf-8") as f:

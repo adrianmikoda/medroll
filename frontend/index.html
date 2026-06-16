@@ -56,11 +56,11 @@
                     </div>
                 </div>
                 <div class="terminal-block">
-                    <div class="prompt">> load_anonymized_demo_data()</div>
+                    <div class="prompt">> load_anonymized_json_demo_data()</div>
                     <div class="output">
-                        <p class="dim">Load sample anonymized physicians and patients from data/*_anonymized/</p>
-                        <button id="btnLoadAnonymizedDemo" class="cmd-btn">EXECUTE</button>
-                        <div id="anonymizedDemoOutput" class="output-result"></div>
+                        <p class="dim">Load sample JSON physicians and patients from data/*_json/</p>
+                        <button id="btnLoadJsonDemo" class="cmd-btn">EXECUTE</button>
+                        <div id="jsonDemoOutput" class="output-result"></div>
                     </div>
                 </div>
                 <div class="section-foot">└────────────────────────────────────────────────────────────┘</div>
@@ -86,7 +86,7 @@
                         </div>
                         <div class="form-row">
                             <label>cv_file:</label>
-                            <input type="file" id="physFile" accept=".pdf,.docx" required>
+                            <input type="file" id="physFile" accept=".pdf,.docx,.json" required>
                         </div>
                         <button type="submit" class="cmd-btn">SUBMIT</button>
                         <div id="physAddOutput" class="output-result"></div>
@@ -111,7 +111,7 @@
                         </div>
                         <div class="form-row">
                             <label>record_file:</label>
-                            <input type="file" id="patFile" accept=".pdf,.docx" required>
+                            <input type="file" id="patFile" accept=".pdf,.docx,.json" required>
                         </div>
                         <button type="submit" class="cmd-btn">SUBMIT</button>
                         <div id="patAddOutput" class="output-result"></div>

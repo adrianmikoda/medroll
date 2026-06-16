@@ -134,21 +134,21 @@ $('btnLoadDemo').addEventListener('click', async () => {
     }
 });
 
-// ── Load Anonymized Demo ────────────────────────────────────
-$('btnLoadAnonymizedDemo').addEventListener('click', async () => {
-    const btn = $('btnLoadAnonymizedDemo');
+// ── Load JSON Demo ──────────────────────────────────────────
+$('btnLoadJsonDemo').addEventListener('click', async () => {
+    const btn = $('btnLoadJsonDemo');
     btn.disabled = true;
-    setLoading('anonymizedDemoOutput', 'Loading anonymized demo data');
+    setLoading('jsonDemoOutput', 'Loading JSON demo data');
 
     try {
-        const data = await api('POST', '/api/demo/load_anonymized');
-        let out = `<span class="msg-ok">Anonymized demo data loaded successfully.</span>\n\n`;
+        const data = await api('POST', '/api/demo/load_json');
+        let out = `<span class="msg-ok">JSON demo data loaded successfully.</span>\n\n`;
         out += `  physicians loaded:  ${data.loaded_physicians.join(', ') || 'none'}\n`;
         out += `  patients loaded: ${data.loaded_patients.join(', ') || 'none'}`;
-        setOutput('anonymizedDemoOutput', out);
+        setOutput('jsonDemoOutput', out);
         refreshDashboard();
     } catch (e) {
-        setOutput('anonymizedDemoOutput', `<span class="msg-err">ERROR: ${escHtml(e.message)}</span>`);
+        setOutput('jsonDemoOutput', `<span class="msg-err">ERROR: ${escHtml(e.message)}</span>`);
     } finally {
         btn.disabled = false;
     }
