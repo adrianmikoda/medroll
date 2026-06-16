@@ -52,7 +52,7 @@ http://127.0.0.1:8000
 ```
 
 ## About
-MedRoll solves the patient-to-physician assignment problem. It reads physician CVs and patient medical charts, computes vector embeddings, and uses semantic matching to find good fits. A linear assignment solver then finds the best global matching — respecting physician capacity limits and penalizing uneven workloads to avoid burnout.
+MedRoll solves the patient-to-physician assignment problem. It reads physician CVs and patient medical charts, computes vector embeddings, and uses semantic similarity. An assignment solver then finds the best global matching — respecting physician capacity limits and penalizing uneven workloads to avoid burnout.
 
 ## Privacy & Data Preparation
 To ensure the security of sensitive data, we recommend using our anonymization tools. 
@@ -64,11 +64,11 @@ To ensure the security of sensitive data, we recommend using our anonymization t
 READ: [anonymization_docs](converter_service/docs/anonymization_docs.md)
 
 **Key Features:**
-- Reads CVs and medical records from `.pdf` and `.docx` files (via PyMuPDF and python-docx)
-- Embeds and indexes documents in LanceDB, using cosine similarity for matching
-- Uses the Hungarian algorithm (`linear_sum_assignment` from SciPy) to solve assignments globally
-- Configuration (penalty weights, model choice, etc.) can be changed on the fly
-- Terminal-style web UI for managing registries and running assignments
+- Reads CVs and medical records from `.pdf`, `.docx` files (via PyMuPDF and python-docx) and `.json` files directly.
+- Embeds and indexes documents in LanceDB, using cosine similarity for matching.
+- Uses the Hungarian algorithm(`linear_sum_assignment` from SciPy) to solve assignments globally.
+- Configuration (penalty weights, model choice, etc.) can be changed on the fly.
+- Terminal-style web UI for managing registries and running assignments.
 
 ## Features
 ### Configuration
@@ -93,11 +93,11 @@ Most of the assignment parameters can be tuned directly from the interface:
 ### Physicians and Patients Registry
 You can add physicians and patients by uploading their documents:
 
-- **Physicians**: Provide a unique `physician_id`, full name, capacity (maximum patients), and a resume (PDF/DOCX). The text is extracted and stored in the vector database.
+- **Physicians**: Provide a unique `physician_id`, full name, capacity (maximum patients) and a resume (PDF/DOCX/JSON). The text is extracted or parsed directly and stored in the vector database.
 
   ![physicians](demo/physicians.png)
 
-- **Patients**: Provide a unique `patient_id` and their medical chart/record. Their data is cached for assignment retrieval.
+- **Patients**: Provide a unique `patient_id` and their medical chart/record (PDF/DOCX/JSON). Their data is cached for assignment retrieval.
 
   ![patients](demo/patients.png)
 
