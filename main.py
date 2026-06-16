@@ -291,6 +291,20 @@ def delete_physician(physician_id: str):
             state.database.delete(physician_id)
         except Exception as e:
             print(f"[WARN] Failed to delete physician '{physician_id}' from DB: {e}")
+            
+    # Unassign patients assigned to the deleted physician
+    patients_updated = False
+    for patient in state.patients.values():
+        if patient.get("assigned_physician_id") == physician_id:
+            patient["assigned_physician_id"] = None
+            patient["assigned_slot_index"] = None
+            patients_updated = True
+            
+    if patients_updated:
+        state.save_patients_to_cache()
+        
+    state.sync_physician_loads_from_patients()
+
     return {"status": "ok", "deleted": physician_id}
 
 

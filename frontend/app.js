@@ -188,10 +188,10 @@ async function refreshPhysicians() {
             return;
         }
 
-        let html = '<table class="cli-table"><thead><tr><th>ID</th><th>NAME</th><th>CAPACITY</th><th>LOAD</th><th>FILE</th><th>LANG</th><th></th></tr></thead><tbody>';
+        let html = '<table class="cli-table"><thead><tr><th>ID</th><th>NAME</th><th>FILENAME</th><th>LANGUAGE</th><th>CAPACITY</th><th>LOAD</th><th></th></tr></thead><tbody>';
 
         for (const d of physicians) {
-            html += `<tr><td>${escHtml(d.physician_id)}</td><td>${escHtml(d.name)}</td><td>${d.capacity}</td><td>${d.current_load}</td><td>${escHtml(d.filename)}</td><td>${escHtml(d.language)}</td><td><button class="cmd-btn cmd-btn-danger" onclick="deletePhysician('${escHtml(d.physician_id)}')">DEL</button></td></tr>`;
+            html += `<tr><td>${escHtml(d.physician_id)}</td><td>${escHtml(d.name)}</td><td>${escHtml(d.filename)}</td><td>${escHtml(d.language)}</td><td>${d.capacity}</td><td>${d.current_load}</td><td><button class="cmd-btn cmd-btn-danger" onclick="deletePhysician('${escHtml(d.physician_id)}')">DEL</button></td></tr>`;
         }
 
         html += '</tbody></table>';
@@ -206,6 +206,7 @@ window.deletePhysician = async function (id) {
     try {
         await api('DELETE', `/api/physicians/${id}`);
         refreshPhysicians();
+        refreshPatients();
         refreshDashboard();
     } catch (e) {
         alert('Error: ' + e.message);
@@ -242,12 +243,13 @@ async function refreshPatients() {
             return;
         }
 
-        let html = '<table class="cli-table"><thead><tr><th>ID</th><th>FILE</th><th>LANG</th><th>CANDIDATES</th><th></th></tr></thead><tbody>';
+        let html = '<table class="cli-table"><thead><tr><th>ID</th><th>FILENAME</th><th>LANGUAGE</th><th>CANDIDATES</th><th>ASSIGNED_TO</th><th></th></tr></thead><tbody>';
 
         for (const p of pats) {
             const candCount = (p.candidates || []).length;
             const candHtml = candCount > 0 ? `<span class="msg-ok">${candCount}</span>` : '<span class="dim">0</span>';
-            html += `<tr><td>${escHtml(p.patient_id)}</td><td>${escHtml(p.filename)}</td><td>${escHtml(p.language)}</td><td>${candHtml}</td><td><button class="cmd-btn cmd-btn-danger" onclick="deletePatient('${escHtml(p.patient_id)}')">DEL</button></td></tr>`;
+            const assignedHtml = p.assigned_physician_id ? `<span class="hl">${escHtml(p.assigned_physician_id)}</span>` : '<span class="dim">---</span>';
+            html += `<tr><td>${escHtml(p.patient_id)}</td><td>${escHtml(p.filename)}</td><td>${escHtml(p.language)}</td><td>${candHtml}</td><td>${assignedHtml}</td><td><button class="cmd-btn cmd-btn-danger" onclick="deletePatient('${escHtml(p.patient_id)}')">DEL</button></td></tr>`;
         }
 
         html += '</tbody></table>';
