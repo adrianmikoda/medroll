@@ -35,8 +35,8 @@ cd medroll
 ```
 2. Create and activate a Python virtual environment:
 ```sh
-python -m venv venv
-source venv/bin/activate
+python -m venv .venv
+source .venv/bin/activate
 ```
 3. Install the required dependencies:
 ```sh
